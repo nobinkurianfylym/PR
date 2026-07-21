@@ -21,3 +21,14 @@ export interface D1Client {
 export function db(): D1Client {
   return (getCloudflareContext().env as unknown as { DB: D1Client }).DB;
 }
+
+/** Minimal R2 surface used by the Asset Vault. */
+export interface R2Client {
+  put(key: string, value: ArrayBuffer, opts?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
+  get(key: string): Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null>;
+  delete(key: string): Promise<void>;
+}
+
+export function bucket(): R2Client {
+  return (getCloudflareContext().env as unknown as { BUCKET: R2Client }).BUCKET;
+}

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
-import { currentPhase, healthScore, recommendations } from "@/server/brain";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { currentPhase, healthScore, aiRecommendations } from "@/server/brain";
 import type { CampaignPhase } from "@/types";
 
 /** One payload that powers every signed-in page. */
@@ -55,7 +56,7 @@ export async function GET() {
     missions: missions.results,
     team: team.results,
     reviews: reviews.results,
-    ai: recommendations({
+    ai: await aiRecommendations({
       title: film.title as string,
       phase,
       daysToRelease,
@@ -63,6 +64,6 @@ export async function GET() {
       teamActive: teamRows.filter((t) => t.status === "Active").length,
       reviewCount: reviewRows.length,
       health,
-    }),
+    }, (getCloudflareContext().env as unknown as { OPENAI_API_KEY?: string }).OPENAI_API_KEY),
   });
 }

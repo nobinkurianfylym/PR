@@ -114,6 +114,50 @@ export function currentPhase(phases: { phase: CampaignPhase; date: string }[]): 
   return active?.phase ?? "Announcement";
 }
 
+/**
+ * Model-backed recommendations when OPENAI_API_KEY is configured
+ * (wrangler secret put OPENAI_API_KEY); deterministic rules otherwise or on
+ * any failure. The rest of the app cannot tell the difference.
+ */
+export async function aiRecommendations(
+  input: Parameters<typeof recommendations>[0],
+  apiKey: string | undefined,
+): Promise<{ today: string; nextAction: string; summary: string }> {
+  const fallback = recommendations(input);
+  if (!apiKey) return fallback;
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              'You are the Campaign Brain of a film publicity platform. Given campaign state, reply with JSON {"today","nextAction","summary"} — three short, specific, calm paragraphs of publicity advice for the producer. No hype.',
+          },
+          { role: "user", content: JSON.stringify(input) },
+        ],
+      }),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return fallback;
+    const data = (await res.json()) as { choices: { message: { content: string } }[] };
+    const parsed = JSON.parse(data.choices[0]?.message.content ?? "") as Partial<
+      typeof fallback
+    >;
+    return {
+      today: parsed.today ?? fallback.today,
+      nextAction: parsed.nextAction ?? fallback.nextAction,
+      summary: parsed.summary ?? fallback.summary,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 export function recommendations(input: {
   title: string;
   phase: CampaignPhase;

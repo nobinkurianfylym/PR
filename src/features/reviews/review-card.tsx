@@ -41,12 +41,20 @@ export function ReviewCard({
         <figcaption className="mt-4 text-[13px] opacity-70">
           {review.publication} — {filmTitle.toUpperCase()}
         </figcaption>
-        <button
-          onClick={() => setShowCard(false)}
-          className="mt-4 text-xs underline opacity-60 hover:opacity-100"
-        >
-          Back to review
-        </button>
+        <div className="mt-4 flex items-center gap-4">
+          <button
+            onClick={() => downloadQuoteCard(review, filmTitle)}
+            className="text-xs font-medium underline"
+          >
+            Download PNG
+          </button>
+          <button
+            onClick={() => setShowCard(false)}
+            className="text-xs underline opacity-60 hover:opacity-100"
+          >
+            Back to review
+          </button>
+        </div>
       </figure>
     );
   }
@@ -69,4 +77,49 @@ export function ReviewCard({
       )}
     </figure>
   );
+}
+
+/** Renders the quote card to a 1080×1350 PNG (portrait social size) and downloads it. */
+function downloadQuoteCard(review: Review, filmTitle: string): void {
+  const W = 1080;
+  const H = 1350;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  ctx.fillStyle = "#f5f5f5";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#0a0a0b";
+
+  const stars = "★".repeat(Math.floor(review.rating)) + (review.rating % 1 >= 0.5 ? "½" : "");
+  ctx.font = "48px -apple-system, sans-serif";
+  ctx.fillText(stars, 96, 220);
+
+  ctx.font = "600 72px -apple-system, sans-serif";
+  const words = `\u201C${review.quote}\u201D`.split(" ");
+  let line = "";
+  let y = 380;
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > W - 192 && line) {
+      ctx.fillText(line, 96, y);
+      line = word;
+      y += 96;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line, 96, y);
+
+  ctx.font = "40px -apple-system, sans-serif";
+  ctx.globalAlpha = 0.65;
+  ctx.fillText(`${review.publication} \u2014 ${filmTitle.toUpperCase()}`, 96, H - 140);
+  ctx.globalAlpha = 1;
+
+  const a = document.createElement("a");
+  a.href = canvas.toDataURL("image/png");
+  a.download = `${filmTitle.toLowerCase().replace(/\s+/g, "-")}-quote-card.png`;
+  a.click();
 }

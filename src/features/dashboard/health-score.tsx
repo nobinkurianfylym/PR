@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { formatDate } from "@/hooks/use-overview";
 import type { CampaignPhase } from "@/types";
@@ -35,10 +36,15 @@ export function HealthScore({ film }: { film: FilmSummary }) {
           {film.healthScore}
         </span>
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
-          Publicity Health Score™
-        </p>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-4">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
+            Publicity Health Score™
+          </p>
+          <Link href="/films/edit" className="shrink-0 text-xs text-faint underline hover:text-foreground">
+            Edit details
+          </Link>
+        </div>
         <h1 className="mt-1 truncate text-3xl font-semibold tracking-tight">{film.title}</h1>
         <p className="mt-1 text-sm text-muted">
           {film.phase} phase · releases {formatDate(film.release_date)} ·{" "}

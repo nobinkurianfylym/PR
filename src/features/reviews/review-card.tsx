@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Star, StarHalf } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/mock";
+import { formatDate } from "@/hooks/use-overview";
 import type { Review } from "@/types";
 
 function Stars({ rating }: { rating: number }) {
@@ -19,15 +19,14 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-/**
- * One review on the wall. "Generate Quote Card" flips the card into the
- * shareable artwork Phase 2's generator will export as an image.
- */
+/** One review on the wall; can flip into the shareable quote-card artwork. */
 export function ReviewCard({
   review,
+  filmTitle,
   withQuoteCard = false,
 }: {
   review: Review;
+  filmTitle: string;
   withQuoteCard?: boolean;
 }) {
   const [showCard, setShowCard] = useState(false);
@@ -40,7 +39,7 @@ export function ReviewCard({
           “{review.quote}”
         </blockquote>
         <figcaption className="mt-4 text-[13px] opacity-70">
-          {review.publication} — THIRA · In cinemas Nov 20
+          {review.publication} — {filmTitle.toUpperCase()}
         </figcaption>
         <button
           onClick={() => setShowCard(false)}
@@ -58,19 +57,13 @@ export function ReviewCard({
         <Stars rating={review.rating} />
         <span className="text-xs text-faint">{formatDate(review.date)}</span>
       </div>
-      <blockquote className="mt-3 text-sm leading-relaxed">
-        “{review.quote}”
-      </blockquote>
+      <blockquote className="mt-3 text-sm leading-relaxed">“{review.quote}”</blockquote>
       <figcaption className="mt-3 text-[13px] text-muted">
-        {review.publication} · {review.critic}
+        {review.publication}
+        {review.critic ? ` · ${review.critic}` : ""}
       </figcaption>
       {withQuoteCard && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-4"
-          onClick={() => setShowCard(true)}
-        >
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowCard(true)}>
           Generate Quote Card
         </Button>
       )}

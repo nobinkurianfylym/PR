@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { api, useOverview } from "@/hooks/use-overview";
 
 /**
  * The five-minute campaign wizard. Four steps, one flat schema — each step
@@ -71,7 +72,9 @@ const FIELD_META: Record<FieldName, { label: string; type?: string; placeholder?
 
 export function CreateFilmWizard() {
   const router = useRouter();
+  const { refresh } = useOverview();
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const current = STEPS[step]!;
   const last = step === STEPS.length - 1;
 
@@ -121,7 +124,16 @@ export function CreateFilmWizard() {
         <Card className="mt-6">
           <form
             className="space-y-4"
-            onSubmit={handleSubmit(() => router.push("/campaign"))}
+            onSubmit={handleSubmit(async (values) => {
+              setSubmitting(true);
+              const res = await api.createFilm(values);
+              if (res.ok) {
+                await refresh();
+                router.push("/campaign");
+              } else {
+                setSubmitting(false);
+              }
+            })}
           >
             {current.fields.map((name) => {
               const meta = FIELD_META[name];
@@ -152,7 +164,7 @@ export function CreateFilmWizard() {
                 Back
               </Button>
               {last ? (
-                <Button type="submit">Generate Campaign</Button>
+                <Button type="submit" disabled={submitting}>{submitting ? "Planning…" : "Generate Campaign"}</Button>
               ) : (
                 <Button type="button" onClick={next}>
                   Continue

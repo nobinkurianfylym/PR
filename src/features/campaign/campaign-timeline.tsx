@@ -4,8 +4,15 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/mock";
-import type { TimelineEntry } from "@/types";
+import { formatDate } from "@/hooks/use-overview";
+import type { CampaignPhase, PhaseStatus } from "@/types";
+
+export interface TimelineEntry {
+  phase: CampaignPhase;
+  date: string;
+  summary: string;
+  status: PhaseStatus;
+}
 
 /**
  * The campaign spine: one clickable card per phase. `compact` renders the
@@ -20,15 +27,15 @@ export function CampaignTimeline({
   compact?: boolean;
 }) {
   const [openId, setOpenId] = useState<string | null>(
-    entries.find((e) => e.status === "active")?.id ?? null,
+    entries.find((e) => e.status === "active")?.phase ?? null,
   );
 
   return (
     <ol className="relative ml-2 border-l border-border">
       {entries.map((entry) => {
-        const open = !compact && openId === entry.id;
+        const open = !compact && openId === entry.phase;
         return (
-          <li key={entry.id} className="relative pb-6 pl-6 last:pb-0">
+          <li key={entry.phase} className="relative pb-6 pl-6 last:pb-0">
             <span
               className={cn(
                 "absolute -left-[9px] top-1 flex h-[17px] w-[17px] items-center justify-center rounded-full border bg-background",
@@ -46,7 +53,7 @@ export function CampaignTimeline({
             </span>
 
             <button
-              onClick={() => !compact && setOpenId(open ? null : entry.id)}
+              onClick={() => !compact && setOpenId(open ? null : entry.phase)}
               className={cn(
                 "w-full rounded-lg text-left",
                 !compact &&

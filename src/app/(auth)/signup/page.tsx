@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import { useSession } from "@/hooks/use-session";
+import { api } from "@/hooks/use-overview";
 
 const schema = z.object({
   name: z.string().min(2, "Tell us your name"),
@@ -18,7 +19,7 @@ type Values = z.infer<typeof schema>;
 
 export default function SignUpPage() {
   const router = useRouter();
-  const signUp = useSession((s) => s.signUp);
+  const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -35,9 +36,11 @@ export default function SignUpPage() {
       </p>
       <form
         className="mt-8 space-y-4"
-        onSubmit={handleSubmit((v) => {
-          signUp(v.name, v.email);
-          router.replace("/films/new");
+        onSubmit={handleSubmit(async (v) => {
+          setServerError(null);
+          const res = await api.signUp(v.name, v.email, v.password);
+          if (res.ok) router.replace("/films/new");
+          else setServerError(((await res.json()) as { error?: string }).error ?? "Could not create account");
         })}
       >
         <Field label="Name" htmlFor="name" error={errors.name?.message}>
@@ -58,6 +61,7 @@ export default function SignUpPage() {
             {...register("password")}
           />
         </Field>
+        {serverError && <p className="text-sm text-red-400">{serverError}</p>}
         <Button type="submit" className="w-full">
           Create account
         </Button>

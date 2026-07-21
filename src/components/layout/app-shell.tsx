@@ -13,8 +13,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/hooks/use-session";
 import { AiPanel } from "@/components/layout/ai-panel";
+import { api, OverviewProvider, useOverview } from "@/hooks/use-overview";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -24,30 +24,23 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/reviews", label: "Review Wall", icon: MessageSquareQuote },
 ];
 
-/**
- * The signed-in app frame: left navigation, main column, and the persistent
- * AI panel on the right. Pages render inside the main column only.
- */
-export function AppShell({ children }: { children: ReactNode }) {
+function Frame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const user = useSession((s) => s.user);
-  const hydrated = useSession((s) => s.hydrated);
-  const signOut = useSession((s) => s.signOut);
+  const { data, loading, unauthorized } = useOverview();
 
-  // Mock auth guard — wait for the persisted session to rehydrate before
-  // deciding, or a hard refresh while signed in would bounce to /signin.
   useEffect(() => {
-    if (hydrated && user === null) router.replace("/signin");
-  }, [hydrated, user, router]);
+    if (unauthorized) router.replace("/signin");
+    // A signed-in user with no film goes straight to the wizard.
+    else if (!loading && data && data.film === null && pathname !== "/films/new") {
+      router.replace("/films/new");
+    }
+  }, [unauthorized, loading, data, pathname, router]);
 
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-56 shrink-0 flex-col border-r border-border px-3 py-5 md:flex">
-        <Link
-          href="/dashboard"
-          className="px-3 text-sm font-semibold tracking-[0.14em]"
-        >
+        <Link href="/dashboard" className="px-3 text-sm font-semibold tracking-[0.14em]">
           PR.FYLYM
         </Link>
         <nav className="mt-8 flex flex-1 flex-col gap-1">
@@ -75,11 +68,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         </nav>
         <div className="border-t border-border px-3 pt-4">
-          <p className="truncate text-[13px] font-medium">{user?.name}</p>
+          <p className="truncate text-[13px] font-medium">{data?.user.name ?? "…"}</p>
           <button
             onClick={() => {
-              signOut();
-              router.replace("/");
+              void api.signOut().then(() => router.replace("/"));
             }}
             className="mt-0.5 text-xs text-faint hover:text-foreground"
           >
@@ -92,5 +84,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <AiPanel />
     </div>
+  );
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <OverviewProvider>
+      <Frame>{children}</Frame>
+    </OverviewProvider>
   );
 }

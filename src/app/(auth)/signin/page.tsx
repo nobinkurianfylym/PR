@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import { useSession } from "@/hooks/use-session";
+import { api } from "@/hooks/use-overview";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -17,7 +18,7 @@ type Values = z.infer<typeof schema>;
 
 export default function SignInPage() {
   const router = useRouter();
-  const signIn = useSession((s) => s.signIn);
+  const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -30,9 +31,11 @@ export default function SignInPage() {
       <p className="mt-1 text-sm text-muted">Sign in to your campaigns.</p>
       <form
         className="mt-8 space-y-4"
-        onSubmit={handleSubmit((v) => {
-          signIn(v.email);
-          router.replace("/dashboard");
+        onSubmit={handleSubmit(async (v) => {
+          setServerError(null);
+          const res = await api.signIn(v.email, v.password);
+          if (res.ok) router.replace("/dashboard");
+          else setServerError(((await res.json()) as { error?: string }).error ?? "Could not sign in");
         })}
       >
         <Field label="Email" htmlFor="email" error={errors.email?.message}>
@@ -50,6 +53,7 @@ export default function SignInPage() {
             {...register("password")}
           />
         </Field>
+        {serverError && <p className="text-sm text-red-400">{serverError}</p>}
         <Button type="submit" className="w-full">
           Sign in
         </Button>

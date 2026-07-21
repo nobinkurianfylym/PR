@@ -8,6 +8,13 @@
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
 	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "pr-fylym-db",
+			"database_id": "b35fa11e-2101-4d09-b0a1-98c2563f60ab"
+		}
+	],
 	"services": [
 		{
 			// Self-reference service binding — the service name must match the

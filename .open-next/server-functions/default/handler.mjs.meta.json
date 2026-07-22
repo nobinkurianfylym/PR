@@ -3266,22 +3266,22 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/films/select/route_client-reference-manifest.js": {
-      "bytes": 9923,
-      "imports": [],
-      "format": "cjs"
-    },
     ".open-next/server-functions/default/.next/server/app/api/auth/signout/route_client-reference-manifest.js": {
       "bytes": 9864,
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/auth/signup/route_client-reference-manifest.js": {
-      "bytes": 9862,
+    ".open-next/server-functions/default/.next/server/app/api/films/select/route_client-reference-manifest.js": {
+      "bytes": 9923,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/api/auth/signin/route_client-reference-manifest.js": {
+      "bytes": 9862,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/api/auth/signup/route_client-reference-manifest.js": {
       "bytes": 9862,
       "imports": [],
       "format": "cjs"
@@ -3311,12 +3311,12 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/films/route_client-reference-manifest.js": {
+    ".open-next/server-functions/default/.next/server/app/api/links/route_client-reference-manifest.js": {
       "bytes": 9850,
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/links/route_client-reference-manifest.js": {
+    ".open-next/server-functions/default/.next/server/app/api/films/route_client-reference-manifest.js": {
       "bytes": 9850,
       "imports": [],
       "format": "cjs"
@@ -3332,7 +3332,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/node_modules/.pnpm/next@15.5.20_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/server/load-manifest.external.js": {
-      "bytes": 125331,
+      "bytes": 125333,
       "imports": [
         {
           "path": "path",
@@ -3375,24 +3375,24 @@
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/films/publish/route_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/api/films/select/route_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/films/select/route_client-reference-manifest.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/api/auth/signout/route_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/auth/signout/route_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/api/auth/signup/route_client-reference-manifest.js",
+          "path": ".open-next/server-functions/default/.next/server/app/api/films/select/route_client-reference-manifest.js",
           "kind": "require-call",
-          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/auth/signup/route_client-reference-manifest.js"
+          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/films/select/route_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/api/auth/signin/route_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/auth/signin/route_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/auth/signup/route_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/auth/signup/route_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/api/assets/[id]/route_client-reference-manifest.js",
@@ -3420,14 +3420,14 @@
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/assets/route_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/api/films/route_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/films/route_client-reference-manifest.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/api/links/route_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/links/route_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/films/route_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/films/route_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/api/team/route_client-reference-manifest.js",
@@ -4345,8 +4345,8 @@
       ],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/assets/[id]/route.js": {
-      "bytes": 10090,
+    ".open-next/server-functions/default/.next/server/app/api/auth/signin/route.js": {
+      "bytes": 8790,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/.pnpm/next@15.5.20_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -4396,8 +4396,8 @@
       ],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/auth/signin/route.js": {
-      "bytes": 8790,
+    ".open-next/server-functions/default/.next/server/app/api/assets/[id]/route.js": {
+      "bytes": 10090,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/.pnpm/next@15.5.20_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -5185,7 +5185,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/press/[slug]/page.js": {
-      "bytes": 42810,
+      "bytes": 45745,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/.pnpm/next@15.5.20_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -5367,8 +5367,8 @@
       ],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/links/route.js": {
-      "bytes": 11431,
+    ".open-next/server-functions/default/.next/server/app/api/films/route.js": {
+      "bytes": 14449,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/.pnpm/next@15.5.20_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -5418,8 +5418,8 @@
       ],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/films/route.js": {
-      "bytes": 14449,
+    ".open-next/server-functions/default/.next/server/app/api/links/route.js": {
+      "bytes": 11450,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/.pnpm/next@15.5.20_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -6127,14 +6127,14 @@
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/films/select/route.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/api/assets/[id]/route.js",
-          "kind": "require-call",
-          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/assets/[id]/route.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/api/auth/signin/route.js",
           "kind": "require-call",
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/auth/signin/route.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/assets/[id]/route.js",
+          "kind": "require-call",
+          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/assets/[id]/route.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/api/auth/signup/route.js",
@@ -6212,14 +6212,14 @@
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/_not-found/page.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/api/links/route.js",
-          "kind": "require-call",
-          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/links/route.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/api/films/route.js",
           "kind": "require-call",
           "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/films/route.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/links/route.js",
+          "kind": "require-call",
+          "original": "/Users/nobinkurian/Desktop/PR/.open-next/server-functions/default/.next/server/app/api/links/route.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/(app)/team/page.js",
@@ -8372,16 +8372,16 @@
         ".open-next/server-functions/default/.next/server/app/api/films/publish/route_client-reference-manifest.js": {
           "bytesInOutput": 9136
         },
-        ".open-next/server-functions/default/.next/server/app/api/films/select/route_client-reference-manifest.js": {
-          "bytesInOutput": 9133
-        },
         ".open-next/server-functions/default/.next/server/app/api/auth/signout/route_client-reference-manifest.js": {
           "bytesInOutput": 9074
         },
-        ".open-next/server-functions/default/.next/server/app/api/auth/signup/route_client-reference-manifest.js": {
-          "bytesInOutput": 9071
+        ".open-next/server-functions/default/.next/server/app/api/films/select/route_client-reference-manifest.js": {
+          "bytesInOutput": 9133
         },
         ".open-next/server-functions/default/.next/server/app/api/auth/signin/route_client-reference-manifest.js": {
+          "bytesInOutput": 9071
+        },
+        ".open-next/server-functions/default/.next/server/app/api/auth/signup/route_client-reference-manifest.js": {
           "bytesInOutput": 9071
         },
         ".open-next/server-functions/default/.next/server/app/api/assets/[id]/route_client-reference-manifest.js": {
@@ -8399,10 +8399,10 @@
         ".open-next/server-functions/default/.next/server/app/api/assets/route_client-reference-manifest.js": {
           "bytesInOutput": 9057
         },
-        ".open-next/server-functions/default/.next/server/app/api/films/route_client-reference-manifest.js": {
+        ".open-next/server-functions/default/.next/server/app/api/links/route_client-reference-manifest.js": {
           "bytesInOutput": 9054
         },
-        ".open-next/server-functions/default/.next/server/app/api/links/route_client-reference-manifest.js": {
+        ".open-next/server-functions/default/.next/server/app/api/films/route_client-reference-manifest.js": {
           "bytesInOutput": 9054
         },
         ".open-next/server-functions/default/.next/server/app/api/team/route_client-reference-manifest.js": {
@@ -8412,7 +8412,7 @@
           "bytesInOutput": 9045
         },
         ".open-next/server-functions/default/node_modules/.pnpm/next@15.5.20_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/server/load-manifest.external.js": {
-          "bytesInOutput": 107000
+          "bytesInOutput": 107002
         },
         ".open-next/server-functions/default/node_modules/.pnpm/next@15.5.20_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/server/app-render/action-async-storage-instance.js": {
           "bytesInOutput": 577
@@ -8525,11 +8525,11 @@
         ".open-next/server-functions/default/.next/server/app/api/films/select/route.js": {
           "bytesInOutput": 9462
         },
-        ".open-next/server-functions/default/.next/server/app/api/assets/[id]/route.js": {
-          "bytesInOutput": 10288
-        },
         ".open-next/server-functions/default/.next/server/app/api/auth/signin/route.js": {
           "bytesInOutput": 8940
+        },
+        ".open-next/server-functions/default/.next/server/app/api/assets/[id]/route.js": {
+          "bytesInOutput": 10288
         },
         ".open-next/server-functions/default/.next/server/app/api/auth/signup/route.js": {
           "bytesInOutput": 9072
@@ -8568,7 +8568,7 @@
           "bytesInOutput": 29717
         },
         ".open-next/server-functions/default/.next/server/app/press/[slug]/page.js": {
-          "bytesInOutput": 43629
+          "bytesInOutput": 46568
         },
         ".open-next/server-functions/default/.next/server/app/api/assets/route.js": {
           "bytesInOutput": 10414
@@ -8576,11 +8576,11 @@
         ".open-next/server-functions/default/.next/server/app/_not-found/page.js": {
           "bytesInOutput": 17652
         },
-        ".open-next/server-functions/default/.next/server/app/api/links/route.js": {
-          "bytesInOutput": 11702
-        },
         ".open-next/server-functions/default/.next/server/app/api/films/route.js": {
           "bytesInOutput": 14795
+        },
+        ".open-next/server-functions/default/.next/server/app/api/links/route.js": {
+          "bytesInOutput": 11722
         },
         ".open-next/server-functions/default/.next/server/app/(app)/team/page.js": {
           "bytesInOutput": 22883
@@ -8754,7 +8754,7 @@
           "bytesInOutput": 63386
         }
       },
-      "bytes": 3620305
+      "bytes": 3623266
     }
   }
 }

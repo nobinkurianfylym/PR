@@ -3,12 +3,13 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   Image as ImageIcon, Clapperboard, Archive, Camera, Shapes,
-  Download, Ticket, ArrowUpRight, type LucideIcon,
+  Download, Ticket, type LucideIcon,
 } from "lucide-react";
 import { db } from "@/server/db";
 import { SubmitForm } from "@/features/press/submit-form";
 import { ShareRow } from "@/features/press/share-row";
 import { linksIn, type FilmLink } from "@/lib/platforms";
+import { PlatformLogo } from "@/components/ui/platform-logo";
 import type { AssetType } from "@/types";
 
 /** Reads D1 per request — press kits must reflect the vault immediately. */
@@ -127,8 +128,8 @@ export default async function PressKitPage(
   ]);
 
   const ticketLinks = linksIn(links, "tickets");
-  const pageLinks = [...linksIn(links, "official"), ...linksIn(links, "social")];
-  const musicLinks = linksIn(links, "music");
+  // Everything else rides in one row under the tickets button.
+  const pageLinks = linksIn(links, "official", "social", "music");
   const caption = `${film.title} — official press kit.${
     film.release_date ? ` In cinemas ${fmtDate(film.release_date)}.` : ""
   }`;
@@ -166,6 +167,27 @@ export default async function PressKitPage(
               </a>
             ))}
           </div>
+        )}
+
+        {pageLinks.length > 0 && (
+          <nav
+            aria-label="Official pages"
+            className={`flex flex-wrap gap-x-2 gap-y-2 ${ticketLinks.length > 0 ? "mt-4" : "mt-7"}`}
+          >
+            {pageLinks.map((l) => (
+              <a
+                key={l.url}
+                href={l.url}
+                target="_blank"
+                rel="noopener"
+                title={l.label}
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] text-muted transition-colors hover:border-foreground/30 hover:text-foreground"
+              >
+                <PlatformLogo platform={l.id} />
+                {l.label}
+              </a>
+            ))}
+          </nav>
         )}
       </header>
 
@@ -216,53 +238,6 @@ export default async function PressKitPage(
       )}
 
       <ShareRow title={film.title} caption={caption} />
-
-      {(pageLinks.length > 0 || musicLinks.length > 0) && (
-        <section className="mt-12">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
-            Official pages
-          </p>
-          {pageLinks.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-              {pageLinks.map((l) => (
-                <a
-                  key={l.url}
-                  href={l.url}
-                  target="_blank"
-                  rel="noopener"
-                  className="group inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
-                >
-                  {l.label}
-                  <ArrowUpRight
-                    className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                    strokeWidth={1.5}
-                  />
-                </a>
-              ))}
-            </div>
-          )}
-          {musicLinks.length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-              <span className="text-xs text-faint">Soundtrack</span>
-              {musicLinks.map((l) => (
-                <a
-                  key={l.url}
-                  href={l.url}
-                  target="_blank"
-                  rel="noopener"
-                  className="group inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
-                >
-                  {l.label}
-                  <ArrowUpRight
-                    className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                    strokeWidth={1.5}
-                  />
-                </a>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
 
       {film.submissions_open === 1 && <SubmitForm slug={slug} />}
 

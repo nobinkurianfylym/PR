@@ -38,12 +38,18 @@ export interface FilmLink {
   url: string;
 }
 
-/** Links of a group, in catalogue order, ready to render. */
-export function linksIn(links: FilmLink[], group: LinkGroup): { label: string; url: string }[] {
-  return platformsIn(group)
+export interface ResolvedLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
+/** Links of one or more groups, in catalogue order, ready to render. */
+export function linksIn(links: FilmLink[], ...groups: LinkGroup[]): ResolvedLink[] {
+  return PLATFORMS.filter((p) => groups.includes(p.group))
     .map((p) => {
       const hit = links.find((l) => l.platform === p.id);
-      return hit ? { label: p.label, url: hit.url } : null;
+      return hit ? { id: p.id, label: p.label, url: hit.url } : null;
     })
-    .filter((x): x is { label: string; url: string } => x !== null);
+    .filter((x): x is ResolvedLink => x !== null);
 }

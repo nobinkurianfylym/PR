@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
+import { setActiveFilm } from "@/server/film";
 import { planCampaign, seedMissions } from "@/server/brain";
+
+/** All the producer's campaigns, newest first. */
+export async function GET() {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { results } = await db()
+    .prepare("SELECT id, title, release_date FROM films WHERE user_id = ? ORDER BY created_at DESC, rowid DESC")
+    .bind(user.id)
+    .all();
+  return NextResponse.json({ films: results });
+}
 
 export async function POST(req: Request) {
   const user = await currentUser();
@@ -45,5 +57,7 @@ export async function POST(req: Request) {
   }
   await database.batch(statements);
 
+  // A brand-new campaign becomes the active one.
+  await setActiveFilm(filmId);
   return NextResponse.json({ id: filmId }, { status: 201 });
 }

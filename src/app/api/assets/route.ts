@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
 import { db, bucket } from "@/server/db";
 import { currentUser } from "@/server/auth";
+import { activeFilmId } from "@/server/film";
 
-async function userFilm(userId: string): Promise<string | null> {
-  const f = await db()
-    .prepare("SELECT id FROM films WHERE user_id = ? ORDER BY created_at DESC LIMIT 1")
-    .bind(userId)
-    .first<{ id: string }>();
-  return f?.id ?? null;
-}
+const userFilm = activeFilmId;
 
 export async function GET() {
   const user = await currentUser();

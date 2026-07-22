@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
+import { activeFilmId } from "@/server/film";
 
 export async function POST(req: Request) {
   const user = await currentUser();
@@ -10,15 +11,12 @@ export async function POST(req: Request) {
   if (!b.quote?.trim() || !b.publication?.trim() || !(rating >= 0.5 && rating <= 5)) {
     return NextResponse.json({ error: "Quote, publication, and a 0.5–5 rating are required" }, { status: 400 });
   }
-  const film = await db()
-    .prepare("SELECT id FROM films WHERE user_id = ? ORDER BY created_at DESC LIMIT 1")
-    .bind(user.id)
-    .first<{ id: string }>();
-  if (!film) return NextResponse.json({ error: "Create a film first" }, { status: 400 });
+  const filmId = await activeFilmId(user.id);
+  if (!filmId) return NextResponse.json({ error: "Create a film first" }, { status: 400 });
   const id = crypto.randomUUID();
   await db()
     .prepare("INSERT INTO reviews (id, film_id, quote, publication, critic, rating) VALUES (?,?,?,?,?,?)")
-    .bind(id, film.id, b.quote.trim(), b.publication.trim(), b.critic?.trim() ?? "", rating)
+    .bind(id, filmId, b.quote.trim(), b.publication.trim(), b.critic?.trim() ?? "", rating)
     .run();
   return NextResponse.json({ id }, { status: 201 });
 }

@@ -31,6 +31,8 @@ export interface Overview {
         daysToRelease: number;
       }
     | null;
+  /** Every campaign the producer owns, for the switcher. */
+  films: { id: string; title: string }[];
   phases: { phase: CampaignPhase; date: string; summary: string; status: PhaseStatus; id?: string }[];
   missions: Mission[];
   team: TeamMember[];
@@ -97,6 +99,7 @@ export const api = {
     post("/api/auth/signup", { name, email, password }),
   signOut: () => post("/api/auth/signout"),
   createFilm: (film: Record<string, unknown>) => post("/api/films", film),
+  selectFilm: (filmId: string) => post("/api/films/select", { filmId }),
   toggleMission: (id: string, done: boolean) => post(`/api/missions/${id}`, { done }, "PATCH"),
   invite: (name: string, role: string) => post("/api/team", { name, role }),
   addReview: (review: { quote: string; publication: string; critic: string; rating: number }) =>

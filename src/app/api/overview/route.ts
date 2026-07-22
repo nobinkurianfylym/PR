@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
+import { activeFilmId } from "@/server/film";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { currentPhase, healthScore, aiRecommendations } from "@/server/brain";
 import type { CampaignPhase } from "@/types";
@@ -11,13 +12,22 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const database = db();
-  const film = await database
-    .prepare("SELECT * FROM films WHERE user_id = ? ORDER BY created_at DESC LIMIT 1")
-    .bind(user.id)
-    .first<Record<string, unknown>>();
-  if (!film) return NextResponse.json({ user, film: null });
+  // Every campaign the producer owns, for the switcher.
+  const films = (
+    await database
+      .prepare("SELECT id, title FROM films WHERE user_id = ? ORDER BY created_at DESC, rowid DESC")
+      .bind(user.id)
+      .all<{ id: string; title: string }>()
+  ).results;
 
-  const filmId = film.id as string;
+  const filmId = await activeFilmId(user.id);
+  if (!filmId) return NextResponse.json({ user, film: null, films: [] });
+
+  const film = await database
+    .prepare("SELECT * FROM films WHERE id = ?")
+    .bind(filmId)
+    .first<Record<string, unknown>>();
+  if (!film) return NextResponse.json({ user, film: null, films });
   const [phases, missions, team, reviews] = await Promise.all([
     database.prepare("SELECT * FROM phases WHERE film_id = ? ORDER BY sort").bind(filmId).all(),
     database.prepare("SELECT * FROM missions WHERE film_id = ? ORDER BY done, rowid").bind(filmId).all(),
@@ -48,6 +58,7 @@ export async function GET() {
 
   return NextResponse.json({
     user,
+    films,
     film: { ...film, healthScore: health, phase, daysToRelease },
     phases: phaseRows.map((p) => ({
       ...p,

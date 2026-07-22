@@ -9,11 +9,11 @@ import {
   Users,
   FolderLock,
   MessageSquareQuote,
-  Clapperboard,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AiPanel } from "@/components/layout/ai-panel";
+import { FilmSwitcher } from "@/components/layout/film-switcher";
 import { api, OverviewProvider, useOverview } from "@/hooks/use-overview";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
@@ -43,7 +43,10 @@ function Frame({ children }: { children: ReactNode }) {
         <Link href="/dashboard" className="px-3 text-sm font-semibold tracking-[0.14em]">
           PR.FYLYM
         </Link>
-        <nav className="mt-8 flex flex-1 flex-col gap-1">
+        <div className="mt-5">
+          <FilmSwitcher />
+        </div>
+        <nav className="mt-6 flex flex-1 flex-col gap-1">
           {NAV.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
@@ -59,13 +62,6 @@ function Frame({ children }: { children: ReactNode }) {
               {label}
             </Link>
           ))}
-          <Link
-            href="/films/new"
-            className="mt-4 flex items-center gap-3 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted transition-colors hover:border-foreground/40 hover:text-foreground"
-          >
-            <Clapperboard className="h-4 w-4" strokeWidth={1.5} />
-            New film
-          </Link>
         </nav>
         <div className="border-t border-border px-3 pt-4">
           <p className="truncate text-[13px] font-medium">{data?.user.name ?? "…"}</p>

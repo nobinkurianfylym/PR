@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
 import { useOverview } from "@/hooks/use-overview";
+import { OfficialLinksEditor } from "@/features/films/official-links-editor";
 
 type FormState = Record<
   "title" | "genre" | "language" | "budget" | "marketingBudget" | "releaseDate" | "posterUrl" | "trailerUrl" | "cast" | "crew",
@@ -105,6 +106,8 @@ export default function EditFilmPage() {
           </div>
         </form>
       </Card>
+
+      <OfficialLinksEditor />
     </div>
   );
 }

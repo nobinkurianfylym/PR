@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   Image as ImageIcon, Clapperboard, Archive, Camera, Shapes,
-  Download, type LucideIcon,
+  Download, Ticket, ArrowUpRight, type LucideIcon,
 } from "lucide-react";
 import { db } from "@/server/db";
 import { SubmitForm } from "@/features/press/submit-form";
+import { ShareRow } from "@/features/press/share-row";
+import { linksIn, type FilmLink } from "@/lib/platforms";
 import type { AssetType } from "@/types";
 
 /** Reads D1 per request — press kits must reflect the vault immediately. */
@@ -34,21 +37,38 @@ const TYPE_ICON: Record<AssetType, LucideIcon> = {
 
 async function getFilm(slug: string): Promise<FilmRow | null> {
   return db()
-    .prepare("SELECT id, title, genre, language, release_date, submissions_open FROM films WHERE slug = ? AND published = 1")
+    .prepare(
+      "SELECT id, title, genre, language, release_date, submissions_open FROM films WHERE slug = ? AND published = 1",
+    )
     .bind(slug)
     .first<FilmRow>();
 }
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> },
-): Promise<Metadata> {
-  const { slug } = await params;
-  const film = await getFilm(slug);
-  if (!film) return { title: "Press kit — PR.FYLYM" };
-  return {
-    title: `${film.title} — Press Kit`,
-    description: `Official press materials for ${film.title}: posters, trailer, stills, and EPK. Free to download for press and partners.`,
-  };
+async function getLinks(filmId: string): Promise<FilmLink[]> {
+  const { results } = await db()
+    .prepare("SELECT platform, url FROM film_links WHERE film_id = ?")
+    .bind(filmId)
+    .all<FilmLink>();
+  return results;
+}
+
+/** The image a shared link should unfurl with — the poster if there is one. */
+async function getShareImage(filmId: string): Promise<string | null> {
+  const row = await db()
+    .prepare(
+      `SELECT id FROM assets
+        WHERE film_id = ? AND status = 'approved' AND content_type LIKE 'image/%'
+        ORDER BY CASE type WHEN 'Poster' THEN 0 ELSE 1 END, created_at DESC
+        LIMIT 1`,
+    )
+    .bind(filmId)
+    .first<{ id: string }>();
+  return row?.id ?? null;
+}
+
+async function origin(): Promise<string> {
+  const host = (await headers()).get("host") ?? "";
+  return `${host.startsWith("localhost") ? "http" : "https"}://${host}`;
 }
 
 function fmtSize(bytes: number): string {
@@ -61,6 +81,34 @@ function fmtDate(iso: string): string {
   });
 }
 
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> },
+): Promise<Metadata> {
+  const { slug } = await params;
+  const film = await getFilm(slug);
+  if (!film) return { title: "Press kit — PR.FYLYM" };
+
+  const [imageId, base] = await Promise.all([getShareImage(film.id), origin()]);
+  const title = `${film.title} — Press Kit`;
+  const description = `Official press materials for ${film.title}: posters, trailer, stills, and EPK. Free to download for press and partners.`;
+  const images = imageId ? [`${base}/api/assets/${imageId}`] : undefined;
+
+  return {
+    title,
+    description,
+    // Shared links unfurl as a card with the poster.
+    openGraph: {
+      title, description, type: "website", url: `${base}/press/${slug}`,
+      ...(images && { images }),
+    },
+    twitter: {
+      card: images ? "summary_large_image" : "summary",
+      title, description,
+      ...(images && { images }),
+    },
+  };
+}
+
 export default async function PressKitPage(
   { params }: { params: Promise<{ slug: string }> },
 ) {
@@ -68,10 +116,22 @@ export default async function PressKitPage(
   const film = await getFilm(slug);
   if (!film) notFound();
 
-  const { results: assets } = await db()
-    .prepare("SELECT id, name, type, content_type, size FROM assets WHERE film_id = ? AND status = 'approved' ORDER BY created_at DESC")
-    .bind(film.id)
-    .all<AssetRow>();
+  const [{ results: assets }, links] = await Promise.all([
+    db()
+      .prepare(
+        "SELECT id, name, type, content_type, size FROM assets WHERE film_id = ? AND status = 'approved' ORDER BY created_at DESC",
+      )
+      .bind(film.id)
+      .all<AssetRow>(),
+    getLinks(film.id),
+  ]);
+
+  const ticketLinks = linksIn(links, "tickets");
+  const pageLinks = [...linksIn(links, "official"), ...linksIn(links, "social")];
+  const musicLinks = linksIn(links, "music");
+  const caption = `${film.title} — official press kit.${
+    film.release_date ? ` In cinemas ${fmtDate(film.release_date)}.` : ""
+  }`;
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-6 py-16 md:px-10">
@@ -90,6 +150,23 @@ export default async function PressKitPage(
           Official materials for press and partners. Everything here is cleared
           for publication — download and use freely.
         </p>
+
+        {ticketLinks.length > 0 && (
+          <div className="mt-7 flex flex-wrap gap-2">
+            {ticketLinks.map((l) => (
+              <a
+                key={l.url}
+                href={l.url}
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+              >
+                <Ticket className="h-4 w-4" strokeWidth={1.5} />
+                Book tickets{ticketLinks.length > 1 ? ` · ${l.label}` : ""}
+              </a>
+            ))}
+          </div>
+        )}
       </header>
 
       {assets.length === 0 ? (
@@ -136,6 +213,55 @@ export default async function PressKitPage(
             );
           })}
         </div>
+      )}
+
+      <ShareRow title={film.title} caption={caption} />
+
+      {(pageLinks.length > 0 || musicLinks.length > 0) && (
+        <section className="mt-12">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
+            Official pages
+          </p>
+          {pageLinks.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+              {pageLinks.map((l) => (
+                <a
+                  key={l.url}
+                  href={l.url}
+                  target="_blank"
+                  rel="noopener"
+                  className="group inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
+                >
+                  {l.label}
+                  <ArrowUpRight
+                    className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    strokeWidth={1.5}
+                  />
+                </a>
+              ))}
+            </div>
+          )}
+          {musicLinks.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+              <span className="text-xs text-faint">Soundtrack</span>
+              {musicLinks.map((l) => (
+                <a
+                  key={l.url}
+                  href={l.url}
+                  target="_blank"
+                  rel="noopener"
+                  className="group inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
+                >
+                  {l.label}
+                  <ArrowUpRight
+                    className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    strokeWidth={1.5}
+                  />
+                </a>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       {film.submissions_open === 1 && <SubmitForm slug={slug} />}

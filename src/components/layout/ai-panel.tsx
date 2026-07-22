@@ -1,11 +1,15 @@
 "use client";
 
 import { Sparkles, ArrowRight } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useOverview } from "@/hooks/use-overview";
 
 /** The persistent Campaign Brain sidebar — recommendations computed server-side from real campaign state. */
 export function AiPanel() {
   const { data } = useOverview();
+  const pathname = usePathname();
+  // Campaign Brain is the AI surface — a second panel beside it is noise.
+  if (pathname.startsWith("/brain")) return null;
   if (!data?.film) return null;
   const { ai, film } = data;
 

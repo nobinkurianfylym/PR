@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import {
   LayoutDashboard,
+  BrainCircuit,
   CalendarRange,
   Users,
   FolderLock,
@@ -17,6 +18,8 @@ import { FilmSwitcher } from "@/components/layout/film-switcher";
 import { api, OverviewProvider, useOverview } from "@/hooks/use-overview";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
+  // Campaign Brain leads — it is the screen that answers what to do next.
+  { href: "/brain", label: "Campaign Brain", icon: BrainCircuit },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/campaign", label: "Campaign", icon: CalendarRange },
   { href: "/team", label: "Street Team", icon: Users },

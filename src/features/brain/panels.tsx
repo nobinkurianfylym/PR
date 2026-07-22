@@ -48,13 +48,17 @@ export function Panel({
   );
 }
 
-/** The one number, drawn once. No second chart anywhere on the screen. */
-export function HealthDial({
-  score,
-  contributors,
+/**
+ * Campaign readiness: the share of tracked fundamentals in place. Every item
+ * behind the number is listed with its real state, so the score is auditable
+ * rather than something to take on faith.
+ */
+export function ReadinessDial({
+  readiness,
+  fundamentals,
 }: {
-  score: number;
-  contributors: { label: string; value: number; hint: string }[];
+  readiness: { met: number; total: number; percent: number };
+  fundamentals: { label: string; fact: string; met: boolean }[];
 }) {
   const c = 2 * Math.PI * 52;
   return (
@@ -66,28 +70,33 @@ export function HealthDial({
             cx="60" cy="60" r="52" fill="none" strokeWidth="5" strokeLinecap="round"
             className="stroke-foreground transition-[stroke-dashoffset] duration-700"
             strokeDasharray={c}
-            strokeDashoffset={c * (1 - score / 100)}
+            strokeDashoffset={c * (1 - readiness.percent / 100)}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-5xl font-semibold tracking-tight">{score}</span>
-          <span className="mt-0.5 text-xs text-faint">of 100</span>
+          <span className="text-4xl font-semibold tracking-tight tabular-nums">
+            {readiness.met}
+            <span className="text-2xl text-faint">/{readiness.total}</span>
+          </span>
+          <span className="mt-0.5 text-xs text-faint">fundamentals in place</span>
         </div>
       </div>
 
-      <ul className="mt-7 w-full space-y-3">
-        {contributors.map((k) => (
-          <li key={k.label} title={k.hint}>
-            <div className="flex items-baseline justify-between text-[13px]">
-              <span className="text-muted">{k.label}</span>
-              <span className="tabular-nums text-faint">{k.value}</span>
-            </div>
-            <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-raised">
-              <div
-                className="h-full rounded-full bg-foreground/70 transition-[width] duration-700"
-                style={{ width: `${k.value}%` }}
+      <ul className="mt-7 w-full space-y-2.5">
+        {fundamentals.map((f) => (
+          <li key={f.label} className="flex items-baseline justify-between gap-3">
+            <span className="flex min-w-0 items-baseline gap-2">
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 shrink-0 translate-y-[-1px] rounded-full",
+                  f.met ? "bg-emerald-400" : "bg-raised ring-1 ring-border",
+                )}
               />
-            </div>
+              <span className={cn("truncate text-[13px]", f.met ? "text-muted" : "text-faint")}>
+                {f.label}
+              </span>
+            </span>
+            <span className="shrink-0 text-[13px] tabular-nums text-faint">{f.fact}</span>
           </li>
         ))}
       </ul>

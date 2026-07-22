@@ -7,20 +7,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BrainHero, type Recommendation } from "@/features/brain/hero";
-import { Empty, HealthDial, Panel } from "@/features/brain/panels";
+import { Empty, Panel, ReadinessDial } from "@/features/brain/panels";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/hooks/use-overview";
 
 interface Brain {
   film: { id: string; title: string; phase: string; daysToRelease: number; releaseDate: string } | null;
-  health: number;
-  contributors: { label: string; value: number; hint: string }[];
+  readiness: { met: number; total: number; percent: number };
+  fundamentals: { label: string; fact: string; met: boolean }[];
   recommendation: Recommendation;
   priorities: { id: string; title: string; impact: string; due: string }[];
   phases: { phase: string; date: string; summary: string; status: string }[];
-  risks: { title: string; severity: "High" | "Medium" | "Low"; probability: number; action: string }[];
-  budget: { amount: number; from: string; to: string; roi: string; rationale: string } | null;
-  prediction: { stars: number; occupancy: number; roi: string; awareness: number; bookingConfidence: string };
+  risks: { title: string; severity: "High" | "Medium" | "Low"; evidence: string; action: string }[];
+  budget: { amount: number; from: string; to: string; rationale: string } | null;
   feed: string[];
   competitors: { id: string; title: string; event: string; event_date: string }[];
   opportunities: { id: string; title: string; kind: string; window_ends: string; reach: number; done: number }[];
@@ -155,7 +154,7 @@ export default function CampaignBrainPage() {
                       <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider", SEVERITY[r.severity])}>
                         {r.severity}
                       </span>
-                      <span className="text-xs text-faint">{r.probability}% likely</span>
+                      <span className="text-xs text-faint">{r.evidence}</span>
                     </div>
                     <p className="mt-2 text-sm font-medium">{r.title}</p>
                     <p className="mt-1.5 flex gap-2 text-[13px] leading-relaxed text-muted">
@@ -189,9 +188,6 @@ export default function CampaignBrainPage() {
                   })}>
                     Apply
                   </Button>
-                  <span className="text-[13px] text-muted">
-                    Projected ROI <span className="font-medium text-emerald-400">{b.budget.roi}</span>
-                  </span>
                 </div>
               </div>
             </Panel>
@@ -348,31 +344,11 @@ export default function CampaignBrainPage() {
 
         {/* Rail: the score, the forecast, and the Brain thinking aloud. */}
         <div className="space-y-6">
-          <Panel title="Campaign health" hint="One score, six contributors.">
-            <HealthDial score={b.health} contributors={b.contributors} />
-          </Panel>
-
-          <Panel title="Outcome prediction" hint="Projected from campaign state today.">
-            <div className="space-y-3.5">
-              <div>
-                <p className="text-[13px] text-muted">Opening weekend</p>
-                <p className="mt-1 text-2xl tracking-[0.2em] text-foreground">
-                  {"★".repeat(b.prediction.stars)}
-                  <span className="text-faint">{"★".repeat(5 - b.prediction.stars)}</span>
-                </p>
-              </div>
-              {[
-                ["Expected occupancy", `${b.prediction.occupancy}%`],
-                ["Campaign ROI", b.prediction.roi],
-                ["Audience awareness", `${b.prediction.awareness}%`],
-                ["Booking confidence", b.prediction.bookingConfidence],
-              ].map(([k, v]) => (
-                <div key={k} className="flex items-baseline justify-between border-t border-border pt-3">
-                  <span className="text-[13px] text-muted">{k}</span>
-                  <span className="text-sm font-medium">{v}</span>
-                </div>
-              ))}
-            </div>
+          <Panel
+            title="Campaign readiness"
+            hint="Tracked fundamentals that are actually in place."
+          >
+            <ReadinessDial readiness={b.readiness} fundamentals={b.fundamentals} />
           </Panel>
 
           <Panel title="Live optimization" accent="ai" hint="The Brain, thinking continuously.">
@@ -388,8 +364,9 @@ export default function CampaignBrainPage() {
 
           <p className="flex gap-2 px-1 text-[11px] leading-relaxed text-faint">
             <AlertTriangle className="mt-px h-3 w-3 shrink-0" strokeWidth={1.5} />
-            Impact, ROI, and outcome figures are projections derived from this
-            campaign&apos;s current state — not measured results.
+            Every figure here is a count of something in your campaign. The
+            Brain does not forecast reach, ROI, or box office — it has no data
+            to forecast from, so it does not guess.
           </p>
         </div>
       </div>

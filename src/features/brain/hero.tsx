@@ -8,14 +8,15 @@ export interface Recommendation {
   action: string;
   window: string;
   reasons: string[];
-  impact: { label: string; value: string }[];
-  confidence: number;
+  evidence: { label: string; value: string }[];
+  unblocks: string;
   alternative: string;
 }
 
 /**
- * The one card that answers "what should we do next". Everything below it on
- * the screen exists to support or challenge this call.
+ * The one card that answers "what should we do next". It shows the reasoning
+ * as reasoning and the facts as facts — no forecast figures, because we have
+ * nothing to forecast from.
  */
 export function BrainHero({
   rec,
@@ -57,27 +58,25 @@ export function BrainHero({
               </li>
             ))}
           </ul>
+          <p className="mt-4 text-sm leading-relaxed text-muted">
+            <span className="text-faint">What this unblocks — </span>
+            {rec.unblocks}
+          </p>
         </div>
 
         <div>
+          {/* Facts, not forecasts. Every value here is a real count. */}
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
-            Projected impact
+            Campaign facts behind this
           </p>
           <dl className="mt-3 space-y-2.5">
-            {rec.impact.map((i) => (
-              <div key={i.label} className="flex items-baseline justify-between gap-4">
-                <dt className="text-sm text-muted">{i.label}</dt>
-                <dd className="text-sm font-medium tabular-nums text-emerald-400">{i.value}</dd>
+            {rec.evidence.map((e) => (
+              <div key={e.label} className="flex items-baseline justify-between gap-4 border-b border-border pb-2.5 last:border-0">
+                <dt className="text-sm text-muted">{e.label}</dt>
+                <dd className="text-sm font-medium tabular-nums">{e.value}</dd>
               </div>
             ))}
           </dl>
-          <div className="mt-4 flex items-center gap-2.5 border-t border-border pt-4">
-            <span className="text-[13px] text-muted">Confidence</span>
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-raised">
-              <div className="h-full rounded-full bg-blue-400" style={{ width: `${rec.confidence}%` }} />
-            </div>
-            <span className="text-[13px] font-medium tabular-nums">{rec.confidence}%</span>
-          </div>
         </div>
       </div>
 
@@ -108,11 +107,12 @@ export function BrainHero({
               How this was chosen
             </p>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-              The Brain walks the campaign&apos;s structural gaps in the order they
-              block a release — key art, then trailer, then amplification, then a
-              booking path, then proof. The first unmet condition becomes the
-              call. Impact figures are projections from that state, not measured
-              results, and confidence rises as more of the campaign is real.
+              The Brain walks this campaign&apos;s gaps in the order they block a
+              release — key art, then trailer, then amplification, then a booking
+              path, then proof, then any open window you have logged. The first
+              unmet condition becomes the call. It is a judgement about
+              sequencing, made from the facts listed above; it is not a
+              prediction, and it carries no forecast of results.
             </p>
           </div>
           <div>

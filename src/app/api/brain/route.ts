@@ -4,7 +4,7 @@ import { currentUser } from "@/server/auth";
 import { activeFilmId } from "@/server/film";
 import { currentPhase } from "@/server/brain";
 import {
-  budgetMove, contributors, health, liveFeed, prediction, recommendation, risks,
+  budgetMove, fundamentals, liveFeed, readiness, recommendation, risks,
   type BrainState,
 } from "@/server/strategist";
 import type { CampaignPhase } from "@/types";
@@ -71,8 +71,8 @@ export async function GET() {
 
   return NextResponse.json({
     film: { id: filmId, title: state.title, phase, daysToRelease, releaseDate: film.release_date },
-    health: health(state),
-    contributors: contributors(state),
+    readiness: readiness(state),
+    fundamentals: fundamentals(state),
     recommendation: recommendation(state),
     priorities: state.openMissions.slice(0, 5),
     phases: phaseRows.map((p) => ({
@@ -81,7 +81,6 @@ export async function GET() {
     })),
     risks: risks(state),
     budget: budgetMove(state),
-    prediction: prediction(state),
     feed: liveFeed(state),
     competitors: state.competitors,
     opportunities: state.opportunities,

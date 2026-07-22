@@ -1,18 +1,22 @@
 import type { CampaignPhase } from "@/types";
 
 /**
- * Campaign Brain 2.0 — the strategist.
+ * Campaign Brain — the strategist.
  *
- * Every output here is *reasoned from real campaign state*: which phase the
- * film is in, how close release is, what is actually in the vault, how big
- * the street team is, what press exists, and what the producer has told us
- * about the market. Nothing is invented from thin air.
+ * TRUTH RULE: this module may only state things that are true.
  *
- * Where a number is a forecast rather than a measurement (expected impact,
- * ROI, opening weekend) it is derived from that state by an explicit,
- * reviewable heuristic and labelled as a projection in the UI. This module is
- * pure and deterministic, which is what makes it the seam a model can take
- * over later without the interface changing.
+ * That means every number it emits is a *count of something real* in the
+ * campaign — assets in the vault, active street-team members, published
+ * coverage, reviews tracked, days to release. There are no forecast
+ * percentages, no probabilities, no predicted ROI, and no confidence scores,
+ * because we have no basis on which to compute any of them. Where the Brain
+ * exercises judgement (which gap to close first, how serious a risk is, where
+ * to move budget) it says so in words and shows the facts that led there, so
+ * a producer can disagree with the reasoning rather than trust a number.
+ *
+ * The one derived figure is Campaign Readiness, and it is defined precisely:
+ * the share of tracked fundamentals that are in place. It is a checklist
+ * score, and the UI shows every item behind it.
  */
 
 export interface BrainState {
@@ -36,118 +40,111 @@ export interface BrainState {
   }[];
 }
 
-/* ────────────────────────── health ────────────────────────── */
+/* ───────────────────── readiness: a checklist, not a rating ───────────────────── */
 
-export interface Contributor {
+export interface Fundamental {
   label: string;
-  value: number;
-  hint: string;
+  /** The real state, in words a producer can check against reality. */
+  fact: string;
+  met: boolean;
 }
 
-const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
-
-export function contributors(s: BrainState): Contributor[] {
+export function fundamentals(s: BrainState): Fundamental[] {
   const has = (t: string) => s.assetTypes.includes(t);
-  const phaseIndex = PHASE_ORDER.indexOf(s.phase);
+  const assetCount = ["Poster", "Trailer", "Stills", "EPK"].filter(has).length;
 
   return [
+    { label: "Poster in the vault", fact: has("Poster") ? "Published" : "None uploaded", met: has("Poster") },
+    { label: "Trailer in the vault", fact: has("Trailer") ? "Published" : "None uploaded", met: has("Trailer") },
+    { label: "Stills for press", fact: has("Stills") ? "Published" : "None uploaded", met: has("Stills") },
+    { label: "Press kit assets", fact: `${assetCount} of 4 key types`, met: assetCount >= 3 },
     {
-      label: "Awareness",
-      value: clamp((has("Poster") ? 45 : 0) + (has("Trailer") ? 35 : 0) + phaseIndex * 4),
-      hint: has("Poster") || has("Trailer")
-        ? "Key visuals are published"
-        : "No poster or trailer in the vault yet",
+      label: "Street team",
+      fact: `${s.teamActive} active ${s.teamActive === 1 ? "member" : "members"}`,
+      met: s.teamActive >= 3,
     },
     {
-      label: "Engagement",
-      value: clamp(Math.min(s.teamActive, 8) * 12.5),
-      hint: `${s.teamActive} active street-team ${s.teamActive === 1 ? "member" : "members"}`,
+      label: "Published coverage",
+      fact: `${s.coverageCount} ${s.coverageCount === 1 ? "piece" : "pieces"} live on the kit`,
+      met: s.coverageCount >= 1,
     },
     {
-      label: "PR Momentum",
-      value: clamp(s.coverageCount * 18 + s.reviewCount * 10),
-      hint: `${s.coverageCount} published pieces, ${s.reviewCount} reviews tracked`,
+      label: "Critic reviews",
+      fact: s.reviewCount === 0
+        ? "None tracked"
+        : `${s.reviewCount} tracked${s.avgRating !== null ? `, averaging ${s.avgRating.toFixed(1)} of 5` : ""}`,
+      met: s.reviewCount >= 1,
     },
     {
-      label: "Audience Interest",
-      value: clamp(s.avgRating === null ? 45 : (s.avgRating / 5) * 100),
-      hint: s.avgRating === null ? "No critic ratings yet" : `Critics averaging ${s.avgRating.toFixed(1)} of 5`,
+      label: "Official channels",
+      fact: `${s.socialCount} linked`,
+      met: s.socialCount >= 3,
     },
     {
-      label: "Media Visibility",
-      value: clamp(s.socialCount * 14 + s.coverageCount * 8),
-      hint: `${s.socialCount} official channels linked`,
+      label: "Booking path",
+      fact: s.hasTicketing ? "Ticketing link published" : "No ticketing link",
+      met: s.hasTicketing,
     },
     {
-      label: "Booking Momentum",
-      value: clamp(
-        (s.hasTicketing ? 60 : 0) + (s.daysToRelease <= 30 && s.daysToRelease >= 0 ? 30 : 10),
-      ),
-      hint: s.hasTicketing ? "Ticketing is live on the press kit" : "No booking link published",
+      label: "Priorities cleared",
+      fact: s.missionsTotal === 0
+        ? "No priorities yet"
+        : `${s.missionsDone} of ${s.missionsTotal} done`,
+      met: s.missionsTotal > 0 && s.missionsDone / s.missionsTotal >= 0.6,
     },
   ];
 }
 
-export function health(s: BrainState): number {
-  const c = contributors(s);
-  const discipline = s.missionsTotal > 0 ? (s.missionsDone / s.missionsTotal) * 100 : 40;
-  const avg = c.reduce((sum, x) => sum + x.value, 0) / c.length;
-  return clamp(avg * 0.75 + discipline * 0.25);
+/** Share of tracked fundamentals in place. Nothing more is claimed. */
+export function readiness(s: BrainState): { met: number; total: number; percent: number } {
+  const f = fundamentals(s);
+  const met = f.filter((x) => x.met).length;
+  return { met, total: f.length, percent: Math.round((met / f.length) * 100) };
 }
 
-/* ────────────────────────── the call ────────────────────────── */
+/* ───────────────────── the call ───────────────────── */
 
 const PHASE_ORDER: CampaignPhase[] = [
   "Announcement", "Poster", "Trailer", "Music", "Release", "OTT", "Awards",
 ];
 
-export interface Impact {
-  label: string;
-  value: string;
-}
-
 export interface Recommendation {
   action: string;
   window: string;
+  /** Why this, now — reasoning, presented as reasoning. */
   reasons: string[];
-  impact: Impact[];
-  confidence: number;
+  /** The facts behind the call. Each is a real count or state. */
+  evidence: { label: string; value: string }[];
+  /** What closing this gap makes possible. Qualitative on purpose. */
+  unblocks: string;
   alternative: string;
 }
 
 /**
- * The single highest-leverage move, chosen by walking the campaign's gaps in
- * order of what actually blocks a release. The first unmet condition wins —
- * that ordering *is* the strategy.
+ * The highest-leverage move, chosen by walking the campaign's gaps in the
+ * order they block a release. The ordering is the strategy; the first unmet
+ * condition wins.
  */
 export function recommendation(s: BrainState): Recommendation {
   const has = (t: string) => s.assetTypes.includes(t);
   const soon = s.daysToRelease <= 45;
-
-  // Confidence tracks how much real signal we have, so a thin campaign never
-  // pretends to certainty.
-  const signals = [
-    s.assetTypes.length > 0, s.teamActive > 0, s.reviewCount > 0,
-    s.coverageCount > 0, s.socialCount > 0, s.hasTicketing,
-    s.competitors.length > 0, s.missionsTotal > 0,
-  ].filter(Boolean).length;
-  const confidence = clamp(52 + signals * 5);
+  const days = `${Math.max(s.daysToRelease, 0)} days to release`;
 
   if (!has("Poster")) {
     return {
       action: `Publish the first-look poster for ${s.title}`,
       window: soon ? "Today" : "This week",
       reasons: [
-        "No poster exists in the vault, so there is nothing for press to run with.",
-        "The poster is the asset every later beat — trailer, songs, release — compounds on.",
+        "No poster exists in the vault, so press have no image to run with.",
+        "Key art is what every later beat — trailer, songs, release — compounds on.",
       ],
-      impact: [
-        { label: "Reach", value: "+18%" },
-        { label: "Press pickup", value: "+12%" },
-        { label: "Awareness", value: "+9%" },
+      evidence: [
+        { label: "Posters in vault", value: "0" },
+        { label: "Assets published", value: String(s.assetTypes.length) },
+        { label: "Timeline", value: days },
       ],
-      confidence,
-      alternative: "If the poster is not locked, publish a first-look still instead and hold the poster for the trailer week.",
+      unblocks: "Press pickup, poster-led social, and every asset that references the key art.",
+      alternative: "If the poster is not locked, publish a first-look still and hold the poster for trailer week.",
     };
   }
 
@@ -157,15 +154,15 @@ export function recommendation(s: BrainState): Recommendation {
       window: soon ? "Within 48 hours" : "This week",
       reasons: [
         `The campaign has reached the ${s.phase} phase with no trailer in the vault.`,
-        "Trailer timing sets the ceiling for opening-weekend awareness; every day of delay compresses the run-up.",
+        "Trailer timing sets the run-up to booking; delay compresses the window.",
       ],
-      impact: [
-        { label: "Reach", value: "+24%" },
-        { label: "Awareness", value: "+15%" },
-        { label: "Advance bookings", value: "+8%" },
+      evidence: [
+        { label: "Trailers in vault", value: "0" },
+        { label: "Current phase", value: s.phase },
+        { label: "Timeline", value: days },
       ],
-      confidence,
-      alternative: "Release a 30-second teaser cut now and hold the full trailer for the booking window.",
+      unblocks: "The booking window, paid video, and the main press cycle.",
+      alternative: "Release a short teaser cut now and hold the full trailer for the booking window.",
     };
   }
 
@@ -174,15 +171,15 @@ export function recommendation(s: BrainState): Recommendation {
       action: "Grow the street team to at least three active members",
       window: "This week",
       reasons: [
-        `Only ${s.teamActive} ${s.teamActive === 1 ? "member is" : "members are"} active, so every drop lands without amplification.`,
+        `Only ${s.teamActive} ${s.teamActive === 1 ? "member is" : "members are"} active, so drops land without amplification.`,
         "Organic amplification is the cheapest reach available before paid spend starts.",
       ],
-      impact: [
-        { label: "Organic reach", value: "+31%" },
-        { label: "Cost per reach", value: "−22%" },
-        { label: "Engagement", value: "+14%" },
+      evidence: [
+        { label: "Active members", value: String(s.teamActive) },
+        { label: "Assets ready to push", value: String(s.assetTypes.length) },
+        { label: "Timeline", value: days },
       ],
-      confidence,
+      unblocks: "Amplification on every future drop, at no media cost.",
       alternative: "Run a single campus activation in your strongest city instead of recruiting broadly.",
     };
   }
@@ -192,15 +189,15 @@ export function recommendation(s: BrainState): Recommendation {
       action: "Publish the booking link on the press kit",
       window: "Today",
       reasons: [
-        `Release is ${s.daysToRelease} days away and there is no ticketing link on the public kit.`,
-        "Awareness without a booking path is the most expensive kind of reach there is.",
+        `Release is ${s.daysToRelease} days away and the public kit has no ticketing link.`,
+        "Awareness without a booking path has nowhere to convert.",
       ],
-      impact: [
-        { label: "Advance bookings", value: "+21%" },
-        { label: "Conversion", value: "+17%" },
-        { label: "Booking confidence", value: "+11%" },
+      evidence: [
+        { label: "Ticketing link", value: "Not published" },
+        { label: "Timeline", value: days },
+        { label: "Coverage live", value: String(s.coverageCount) },
       ],
-      confidence,
+      unblocks: "A direct path from the press kit to a sale.",
       alternative: "Link the theatre chain's listing page until the aggregator page is live.",
     };
   }
@@ -210,78 +207,83 @@ export function recommendation(s: BrainState): Recommendation {
       action: "Publish your first press coverage to the kit",
       window: "This week",
       reasons: [
-        "No approved coverage is public, so the press kit offers no third-party proof.",
-        "Coverage is what converts a curious visitor into someone who shares.",
+        "No approved coverage is public, so the kit offers no third-party proof.",
+        "Coverage is what turns a visitor into someone who shares.",
       ],
-      impact: [
-        { label: "Credibility", value: "+26%" },
-        { label: "Share rate", value: "+19%" },
-        { label: "Press pickup", value: "+10%" },
+      evidence: [
+        { label: "Coverage live", value: "0" },
+        { label: "Reviews tracked", value: String(s.reviewCount) },
+        { label: "Active members to amplify", value: String(s.teamActive) },
       ],
-      confidence,
+      unblocks: "Shareable proof for the street team and anyone landing on the kit.",
       alternative: "Turn your strongest review into a quote card and seed it with the street team.",
     };
   }
 
-  const urgent = s.opportunities.find((o) => !o.done);
-  if (urgent) {
+  const open = s.opportunities.find((o) => !o.done);
+  if (open) {
     return {
-      action: `Act on the ${urgent.kind.toLowerCase()}: ${urgent.title}`,
-      window: urgent.window_ends ? `Before ${urgent.window_ends}` : "This week",
+      action: `Act on the ${open.kind.toLowerCase()}: ${open.title}`,
+      window: open.window_ends ? `Before ${open.window_ends}` : "This week",
       reasons: [
         "This window is open now and closes on its own schedule, not yours.",
-        "Timed opportunities outperform planned beats because the audience is already gathered.",
+        "Timed moments reach an audience that has already gathered.",
       ],
-      impact: [
-        { label: "Reach", value: urgent.reach > 0 ? `+${(urgent.reach / 1000).toFixed(0)}K` : "+12%" },
-        { label: "Relevance", value: "+16%" },
-        { label: "Cost", value: "₹0 incremental" },
+      evidence: [
+        { label: "Window closes", value: open.window_ends || "Not set" },
+        ...(open.reach > 0
+          ? [{ label: "Reach you logged", value: open.reach.toLocaleString("en-IN") }]
+          : []),
+        { label: "Active members", value: String(s.teamActive) },
       ],
-      confidence,
-      alternative: "Skip it if the tone is off-brand — a forced trend costs more credibility than the reach is worth.",
+      unblocks: "Reach you would otherwise have to buy.",
+      alternative: "Skip it if the tone is off-brand — a forced trend costs more credibility than it returns.",
     };
   }
 
   return {
-    action: `Hold the line and clear today's priorities on ${s.title}`,
+    action: `Keep the cadence on ${s.title}`,
     window: "Today",
     reasons: [
       "No structural gap is open: assets, team, coverage, and booking are all in place.",
-      "At this stage compounding beats novelty — consistency of output is the highest-value move.",
+      "At this stage consistency of output matters more than any single new move.",
     ],
-    impact: [
-      { label: "Momentum", value: "sustained" },
-      { label: "Health", value: "+4%" },
-      { label: "Risk", value: "−9%" },
+    evidence: [
+      { label: "Assets published", value: String(s.assetTypes.length) },
+      { label: "Coverage live", value: String(s.coverageCount) },
+      { label: "Active members", value: String(s.teamActive) },
     ],
-    confidence,
-    alternative: "Bring the next phase forward by a week to buy slack before release.",
+    unblocks: "Sustained attention through to release.",
+    alternative: "Bring the next phase forward a week to buy slack before release.",
   };
 }
 
-/* ────────────────────────── risks ────────────────────────── */
+/* ───────────────────── risks ───────────────────── */
 
 export type Severity = "High" | "Medium" | "Low";
 
 export interface Risk {
   title: string;
+  /** Our judgement of seriousness — labelled as judgement in the UI. */
   severity: Severity;
-  probability: number;
+  /** The real, checkable fact that raised it. */
+  evidence: string;
   action: string;
 }
 
 export function risks(s: BrainState): Risk[] {
   const out: Risk[] = [];
   const has = (t: string) => s.assetTypes.includes(t);
+  const days = Math.max(s.daysToRelease, 0);
 
   for (const c of s.competitors) {
     out.push({
       title: `${c.title}: ${c.event}`,
       severity: "High",
-      probability: 90,
+      evidence: c.event_date ? `You logged this for ${c.event_date}` : "You logged this competitor move",
       action: c.event_date
-        ? `Move your next drop off ${c.event_date} — give it a 24-hour gap so you do not split coverage.`
-        : "Hold your next drop 24 hours clear of theirs so you do not split coverage.",
+        ? `Keep your next drop 24 hours clear of ${c.event_date} so you do not split coverage.`
+        : "Keep your next drop 24 hours clear of theirs so you do not split coverage.",
     });
   }
 
@@ -289,31 +291,31 @@ export function risks(s: BrainState): Risk[] {
     out.push({
       title: "No trailer with release inside six weeks",
       severity: "High",
-      probability: 85,
+      evidence: `0 trailers in the vault, ${days} days to release`,
       action: "Lock a cut this week, even a shorter one, and protect the booking window.",
     });
   }
   if (s.teamActive < 3) {
     out.push({
-      title: "Street team below critical mass",
+      title: "Street team below three active members",
       severity: s.daysToRelease <= 30 ? "High" : "Medium",
-      probability: 74,
-      action: "Recruit three more members before the next drop so it lands with amplification.",
+      evidence: `${s.teamActive} active ${s.teamActive === 1 ? "member" : "members"}`,
+      action: "Recruit until three are active so the next drop lands with amplification.",
     });
   }
   if (s.coverageCount === 0 && s.daysToRelease <= 60) {
     out.push({
-      title: "Media silence — no coverage published",
+      title: "No coverage published",
       severity: "Medium",
-      probability: 68,
+      evidence: `0 pieces live, ${days} days to release`,
       action: "Pitch two outlets this week and publish whatever lands to the press kit.",
     });
   }
   if (s.avgRating !== null && s.avgRating < 3) {
     out.push({
-      title: "Critic sentiment trending negative",
+      title: "Tracked reviews are averaging below 3 of 5",
       severity: "High",
-      probability: 71,
+      evidence: `${s.reviewCount} reviews, averaging ${s.avgRating.toFixed(1)}`,
       action: "Lead with audience reaction over critic quotes, and pull the weakest quotes from the kit.",
     });
   }
@@ -321,36 +323,36 @@ export function risks(s: BrainState): Risk[] {
     out.push({
       title: "No booking path this close to release",
       severity: "High",
-      probability: 88,
-      action: "Publish the ticketing link today — awareness without it does not convert.",
+      evidence: `No ticketing link, ${days} days to release`,
+      action: "Publish the ticketing link today.",
     });
   }
   if (s.missionsTotal > 0 && s.missionsDone / s.missionsTotal < 0.34 && s.daysToRelease <= 45) {
     out.push({
-      title: "Execution slipping against the plan",
+      title: "Most priorities still open",
       severity: "Medium",
-      probability: 62,
+      evidence: `${s.missionsDone} of ${s.missionsTotal} done, ${days} days to release`,
       action: "Clear the two highest-impact open priorities before starting anything new.",
     });
   }
 
   const rank: Record<Severity, number> = { High: 0, Medium: 1, Low: 2 };
-  return out.sort((a, b) => rank[a.severity] - rank[b.severity] || b.probability - a.probability).slice(0, 5);
+  return out.sort((a, b) => rank[a.severity] - rank[b.severity]).slice(0, 5);
 }
 
-/* ────────────────────────── budget ────────────────────────── */
+/* ───────────────────── budget ───────────────────── */
 
 export interface BudgetMove {
   amount: number;
   from: string;
   to: string;
-  roi: string;
   rationale: string;
 }
 
 /**
- * A single reallocation, sized as a share of the real marketing budget and
- * chosen by phase — where attention actually sits at this point in the run.
+ * A suggested reallocation, sized as a share of the real marketing budget.
+ * Deliberately carries no ROI figure — we have no spend or performance data,
+ * so any number here would be invented.
  */
 export function budgetMove(s: BrainState): BudgetMove | null {
   if (s.marketingBudget <= 0) return null;
@@ -358,79 +360,34 @@ export function budgetMove(s: BrainState): BudgetMove | null {
   if (slice <= 0) return null;
 
   const byPhase: Partial<Record<CampaignPhase, Omit<BudgetMove, "amount">>> = {
-    Announcement: {
-      from: "Outdoor", to: "Short-form video", roi: "+11%",
-      rationale: "Nobody is looking for the film yet — discovery beats reminder at this stage.",
-    },
-    Poster: {
-      from: "Print", to: "Instagram Reels", roi: "+14%",
-      rationale: "Poster art travels furthest where it can be reshared, not where it is static.",
-    },
-    Trailer: {
-      from: "Outdoor", to: "YouTube pre-roll", roi: "+18%",
-      rationale: "Trailer week is the one moment paid video buys genuine intent rather than impressions.",
-    },
-    Music: {
-      from: "Display", to: "Audio platforms and Reels", roi: "+13%",
-      rationale: "Songs carry the campaign between the trailer and release — put spend where they are played.",
-    },
-    Release: {
-      from: "Brand awareness", to: "Local booking-intent ads", roi: "+22%",
-      rationale: "In release week, only spend that ends at a booking page is worth anything.",
-    },
-    OTT: {
-      from: "Theatrical outdoor", to: "Platform co-marketing", roi: "+9%",
-      rationale: "The audience has moved; reach them where the film now lives.",
-    },
-    Awards: {
-      from: "Consumer ads", to: "Trade and festival placements", roi: "+7%",
-      rationale: "The audience for this phase is juries and programmers, not ticket buyers.",
-    },
+    Announcement: { from: "Outdoor", to: "Short-form video", rationale: "Nobody is searching for the film yet — discovery beats reminder at this stage." },
+    Poster: { from: "Print", to: "Instagram Reels", rationale: "Poster art travels furthest where it can be reshared, not where it is static." },
+    Trailer: { from: "Outdoor", to: "YouTube pre-roll", rationale: "Trailer week is when paid video reaches people already deciding what to watch." },
+    Music: { from: "Display", to: "Audio platforms and Reels", rationale: "Songs carry the campaign between trailer and release — spend where they are played." },
+    Release: { from: "Brand awareness", to: "Local booking-intent ads", rationale: "In release week, spend that does not end at a booking page is wasted." },
+    OTT: { from: "Theatrical outdoor", to: "Platform co-marketing", rationale: "The audience has moved; reach them where the film now lives." },
+    Awards: { from: "Consumer ads", to: "Trade and festival placements", rationale: "The audience for this phase is juries and programmers, not ticket buyers." },
   };
 
   const move = byPhase[s.phase];
   return move ? { amount: slice, ...move } : null;
 }
 
-/* ────────────────────────── prediction ────────────────────────── */
+/* ───────────────────── live feed ───────────────────── */
 
-export interface Prediction {
-  stars: number;
-  occupancy: number;
-  roi: string;
-  awareness: number;
-  bookingConfidence: "High" | "Moderate" | "Low";
-}
-
-export function prediction(s: BrainState): Prediction {
-  const h = health(s);
-  const c = contributors(s);
-  const awareness = c.find((x) => x.label === "Awareness")?.value ?? 0;
-  const occupancy = clamp(28 + h * 0.55);
-  return {
-    stars: Math.max(1, Math.min(5, Math.round(h / 20))),
-    occupancy,
-    roi: `${(1.4 + (h / 100) * 3).toFixed(1)}×`,
-    awareness: clamp(awareness * 0.6 + h * 0.4),
-    bookingConfidence: h >= 70 ? "High" : h >= 45 ? "Moderate" : "Low",
-  };
-}
-
-/* ────────────────────────── live feed ────────────────────────── */
-
-/** Continuous nudges, each tied to something true about the campaign now. */
+/** Suggestions, each tied to something true about the campaign right now. */
 export function liveFeed(s: BrainState): string[] {
   const out: string[] = [];
   const has = (t: string) => s.assetTypes.includes(t);
 
   if (!has("Stills")) out.push("Upload production stills — outlets reuse low-res frames when you don't supply them.");
-  if (s.teamActive > 0 && s.teamActive < 6) out.push(`Give your ${s.teamActive} active members a scripted task this week rather than a general ask.`);
+  if (s.teamActive > 0 && s.teamActive < 6) out.push(`Give your ${s.teamActive} active ${s.teamActive === 1 ? "member" : "members"} a specific task this week rather than a general ask.`);
   if (s.coverageCount > 0) out.push(`Turn your ${s.coverageCount} published ${s.coverageCount === 1 ? "piece" : "pieces"} into quote cards for the street team.`);
-  if (s.reviewCount > 2) out.push("Lead the press kit with your two strongest quotes — visitors read the first two, rarely the rest.");
+  if (s.reviewCount > 2) out.push("Lead the press kit with your two strongest quotes — visitors rarely read past them.");
   if (s.daysToRelease > 60) out.push("Schedule a behind-the-scenes drop between phases to hold attention through the quiet stretch.");
   if (s.daysToRelease <= 30 && s.daysToRelease >= 0) out.push("Shift to short-form daily output — cadence matters more than production value this close in.");
   if (s.socialCount < 3) out.push("Link every official channel on the press kit so coverage points somewhere you own.");
-  if (s.opportunities.some((o) => !o.done)) out.push("An open opportunity window is unclaimed — timed reach is cheaper than planned reach.");
+  if (s.opportunities.some((o) => !o.done)) out.push("An opportunity window you logged is still open.");
   out.push("Schedule a director interview for the week the trailer lands, not after it.");
 
   return out.slice(0, 6);

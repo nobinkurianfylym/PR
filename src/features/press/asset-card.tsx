@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Image as ImageIcon, Clapperboard, Archive, Camera, Shapes,
+  Image as ImageIcon, Clapperboard, Archive, Camera, Shapes, Music4,
   Download, Eye, Share2, Link2, Play, X as Close, type LucideIcon,
 } from "lucide-react";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 import type { AssetType } from "@/types";
 
 const TYPE_ICON: Record<AssetType, LucideIcon> = {
-  Poster: ImageIcon, Trailer: Clapperboard, EPK: Archive, Stills: Camera, Logo: Shapes,
+  Poster: ImageIcon, Trailer: Clapperboard, Stills: Camera, BTS: Camera,
+  EPK: Archive, Logo: Shapes, Music: Music4,
 };
 
 export interface PressAsset {

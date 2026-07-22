@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { SHARED_LINK_KINDS } from "@/lib/platforms";
+import { UPLOAD_TYPES } from "@/lib/asset-sections";
 import type { AssetType } from "@/types";
 
-const FILE_TYPES: AssetType[] = ["Stills", "Poster", "Trailer", "EPK", "Logo"];
+const FILE_TYPES: AssetType[] = UPLOAD_TYPES;
 
 type Mode = "file" | "link";
 

@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { Ticket } from "lucide-react";
 import { db } from "@/server/db";
 import { AssetCard, type PressAsset } from "@/features/press/asset-card";
+import { SectionNav, SectionHeading } from "@/components/ui/section-nav";
+import { groupAssets } from "@/lib/asset-sections";
 import { SubmitForm } from "@/features/press/submit-form";
 import { ShareRow } from "@/features/press/share-row";
 import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
@@ -123,15 +125,25 @@ export default async function PressKitPage(
     links: coverage.filter((c) => c.kind === kind),
   })).filter((g) => g.links.length > 0);
 
+  const assetGroups = groupAssets(assets);
+  const musicLinks = linksIn(links, "music");
+
+  // Only sections with something in them get a nav entry.
+  const navSections = [
+    ...assetGroups.map((g) => ({ id: g.section.id, label: g.section.label })),
+    ...(coverageGroups.length > 0 ? [{ id: "reviews", label: "Reviews" }] : []),
+    ...(musicLinks.length > 0 ? [{ id: "music-links", label: "Music" }] : []),
+  ];
+
   const ticketLinks = linksIn(links, "tickets");
   // Everything else rides in one row under the tickets button.
-  const pageLinks = linksIn(links, "official", "social", "music");
+  const pageLinks = linksIn(links, "official", "social");
   const caption = `${film.title} — official press kit.${
     film.release_date ? ` In cinemas ${fmtDate(film.release_date)}.` : ""
   }`;
 
   return (
-    <div className="mx-auto min-h-screen max-w-4xl px-6 py-16 md:px-10">
+    <div className="mx-auto min-h-screen max-w-4xl px-6 pb-[45vh] pt-16 md:px-10">
       <header className="border-b border-border pb-10">
         <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-faint">
           Press Kit
@@ -187,20 +199,51 @@ export default async function PressKitPage(
         )}
       </header>
 
+      <SectionNav sections={navSections} />
+
       {assets.length === 0 ? (
         <p className="py-20 text-center text-sm text-faint">
           Materials are being prepared. Please check back shortly.
         </p>
       ) : (
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {assets.map((a) => (
-            <AssetCard key={a.id} asset={a} slug={slug} filmTitle={film.title} />
+        <div className="space-y-12">
+          {assetGroups.map(({ section, items }) => (
+            <section key={section.id}>
+              <SectionHeading id={section.id} title={section.label} count={items.length} />
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {items.map((a) => (
+                  <AssetCard key={a.id} asset={a} slug={slug} filmTitle={film.title} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
 
       {coverageGroups.length > 0 && (
-        <PressCoverage film={film.title} groups={coverageGroups} />
+        <div id="reviews" className="scroll-mt-24">
+          <PressCoverage film={film.title} groups={coverageGroups} />
+        </div>
+      )}
+
+      {musicLinks.length > 0 && (
+        <section id="music-links" className="mt-14 scroll-mt-24">
+          <SectionHeading id="music-links-h" title="Music" count={musicLinks.length} />
+          <div className="mt-4 flex flex-wrap gap-2">
+            {musicLinks.map((l) => (
+              <a
+                key={l.url}
+                href={l.url}
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] text-muted transition-colors hover:border-foreground/30 hover:text-foreground"
+              >
+                <PlatformLogo platform={l.id} />
+                {l.label}
+              </a>
+            ))}
+          </div>
+        </section>
       )}
 
       <ShareRow title={film.title} caption={caption} />

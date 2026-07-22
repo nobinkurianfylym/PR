@@ -64,7 +64,14 @@ export interface Review {
   date: string;
 }
 
-export type AssetType = "Poster" | "Trailer" | "EPK" | "Stills" | "Logo";
+export type AssetType =
+  | "Poster"
+  | "Trailer"
+  | "Stills"
+  | "BTS"
+  | "EPK"
+  | "Logo"
+  | "Music";
 
 export interface Asset {
   id: string;

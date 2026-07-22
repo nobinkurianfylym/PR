@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Image as ImageIcon, Clapperboard, Archive, Camera, Shapes,
+  Image as ImageIcon, Clapperboard, Archive, Camera, Shapes, Music4,
   Eye, Share2, Download, Trash2, Upload, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Card } from "@/components/ui/card";
 import { api, formatDate } from "@/hooks/use-overview";
 import { PressKitPanel } from "@/features/assets/press-kit-panel";
 import { SharedLinksInbox } from "@/features/assets/shared-links-inbox";
+import { SectionNav, SectionHeading } from "@/components/ui/section-nav";
+import { groupAssets, UPLOAD_TYPES } from "@/lib/asset-sections";
 import type { AssetType } from "@/types";
 
 interface AssetRow {
@@ -19,9 +21,10 @@ interface AssetRow {
 }
 
 const TYPE_ICON: Record<AssetType, LucideIcon> = {
-  Poster: ImageIcon, Trailer: Clapperboard, EPK: Archive, Stills: Camera, Logo: Shapes,
+  Poster: ImageIcon, Trailer: Clapperboard, Stills: Camera, BTS: Camera,
+  EPK: Archive, Logo: Shapes, Music: Music4,
 };
-const TYPES: AssetType[] = ["Poster", "Trailer", "EPK", "Stills", "Logo"];
+const TYPES: AssetType[] = UPLOAD_TYPES;
 
 function fmtSize(bytes: number): string {
   if (bytes > 1e6) return `${(bytes / 1e6).toFixed(1)}MB`;
@@ -60,9 +63,17 @@ export default function AssetsPage() {
 
   const approved = (assets ?? []).filter((a) => a.status !== "pending");
   const pending = (assets ?? []).filter((a) => a.status === "pending");
+  const groups = groupAssets(approved);
+
+  // The vault navigates by the same sections the public kit uses, plus the
+  // coverage inbox, which is where "Reviews" lives on this side.
+  const navSections = [
+    ...groups.map((g) => ({ id: g.section.id, label: g.section.label })),
+    ...(pending.length > 0 ? [{ id: "submissions", label: "Submissions" }] : []),
+  ];
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl pb-[45vh]">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
@@ -101,12 +112,14 @@ export default function AssetsPage() {
         </div>
       </div>
 
+      <SectionNav sections={navSections} />
+
       <PressKitPanel />
 
       <SharedLinksInbox />
 
       {pending.length > 0 && (
-        <section className="mt-8">
+        <section id="submissions" className="mt-8 scroll-mt-24">
           <div className="flex items-baseline justify-between">
             <h2 className="text-sm font-medium">
               Submissions awaiting review
@@ -167,54 +180,61 @@ export default function AssetsPage() {
           The vault is empty — upload your first poster, trailer, or EPK.
         </p>
       ) : (
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {approved.map((a) => {
-            const Icon = TYPE_ICON[a.type] ?? Camera;
-            return (
-              <Card key={a.id} className="group flex flex-col overflow-hidden p-0">
-                {/* Whole image, never cropped — grows on hover inside its frame. */}
-                <div className="flex h-56 items-center justify-center overflow-hidden bg-raised p-3">
-                  {a.content_type.startsWith("image/") ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={`/api/assets/${a.id}`}
-                      alt={a.name}
-                      loading="lazy"
-                      className="max-h-full max-w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.12]"
-                    />
-                  ) : (
-                    <Icon className="h-8 w-8 text-faint" strokeWidth={1.25} />
-                  )}
-                </div>
-                <p className="mt-3 truncate px-4 text-xs text-faint" title={a.name}>
-                  {a.name} · {fmtSize(a.size)} · {formatDate(a.created_at.slice(0, 10))}
-                </p>
-                <div className="mb-3 mt-2 flex gap-1.5 px-3">
-                  <Button variant="ghost" size="sm" onClick={() => window.open(`/api/assets/${a.id}`, "_blank")}>
-                    <Eye className="h-3.5 w-3.5" strokeWidth={1.5} /> Preview
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => void share(a)}>
-                    <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    {sharedId === a.id ? "Copied!" : "Share"}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => window.open(`/api/assets/${a.id}?download`, "_blank")} aria-label="Download">
-                    <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  </Button>
-                  <Button
-                    variant="ghost" size="sm" aria-label="Delete"
-                    onClick={async () => {
-                      if (confirm(`Delete ${a.name}?`)) {
-                        await fetch(`/api/assets/${a.id}`, { method: "DELETE" });
-                        await load();
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
+        <div className="mt-8 space-y-12">
+          {groups.map(({ section, items }) => (
+            <section key={section.id}>
+              <SectionHeading id={section.id} title={section.label} count={items.length} />
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((a) => {
+                  const Icon = TYPE_ICON[a.type] ?? Camera;
+                  return (
+                    <Card key={a.id} className="group flex flex-col overflow-hidden p-0">
+                      {/* Whole image, never cropped — grows on hover inside its frame. */}
+                      <div className="flex h-56 items-center justify-center overflow-hidden bg-raised p-3">
+                        {a.content_type.startsWith("image/") ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={`/api/assets/${a.id}`}
+                            alt={a.name}
+                            loading="lazy"
+                            className="max-h-full max-w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.12]"
+                          />
+                        ) : (
+                          <Icon className="h-8 w-8 text-faint" strokeWidth={1.25} />
+                        )}
+                      </div>
+                      <p className="mt-3 truncate px-4 text-xs text-faint" title={a.name}>
+                        {a.name} · {fmtSize(a.size)} · {formatDate(a.created_at.slice(0, 10))}
+                      </p>
+                      <div className="mb-3 mt-2 flex gap-1.5 px-3">
+                        <Button variant="ghost" size="sm" onClick={() => window.open(`/api/assets/${a.id}`, "_blank")}>
+                          <Eye className="h-3.5 w-3.5" strokeWidth={1.5} /> Preview
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => void share(a)}>
+                          <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          {sharedId === a.id ? "Copied!" : "Share"}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => window.open(`/api/assets/${a.id}?download`, "_blank")} aria-label="Download">
+                          <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        </Button>
+                        <Button
+                          variant="ghost" size="sm" aria-label="Delete"
+                          onClick={async () => {
+                            if (confirm(`Delete ${a.name}?`)) {
+                              await fetch(`/api/assets/${a.id}`, { method: "DELETE" });
+                              await load();
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </div>

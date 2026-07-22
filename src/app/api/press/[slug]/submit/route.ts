@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, bucket } from "@/server/db";
+import { UPLOAD_TYPES } from "@/lib/asset-sections";
 import type { AssetType } from "@/types";
 
 /**
@@ -18,7 +19,7 @@ const ALLOWED_EXACT = [
   "application/x-zip-compressed",
 ];
 
-const VALID_TYPES: AssetType[] = ["Poster", "Trailer", "EPK", "Stills", "Logo"];
+const VALID_TYPES: AssetType[] = UPLOAD_TYPES;
 
 function isAllowed(contentType: string): boolean {
   return (

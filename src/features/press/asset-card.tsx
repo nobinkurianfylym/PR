@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Image as ImageIcon, Clapperboard, Archive, Camera, Shapes,
-  Download, Eye, Share2, Link2, X as Close, type LucideIcon,
+  Download, Eye, Share2, Link2, Play, X as Close, type LucideIcon,
 } from "lucide-react";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 import type { AssetType } from "@/types";
@@ -60,6 +60,7 @@ export function AssetCard({
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isImage = asset.content_type.startsWith("image/");
+  const isVideo = asset.content_type.startsWith("video/");
   const Icon = TYPE_ICON[asset.type] ?? Camera;
   const fileUrl = `/api/assets/${asset.id}`;
 
@@ -86,9 +87,9 @@ export function AssetCard({
   }, [previewing]);
 
   function openPreview() {
-    // Images get an in-page lightbox; anything else is better handled by the
-    // browser's own viewer.
-    if (isImage) setPreviewing(true);
+    // Images and video open in the lightbox; documents and archives are
+    // better handled by the browser's own viewer.
+    if (isImage || isVideo) setPreviewing(true);
     else window.open(fileUrl, "_blank", "noopener");
   }
 
@@ -120,6 +121,21 @@ export function AssetCard({
               loading="lazy"
               className="max-h-full max-w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.12]"
             />
+          ) : isVideo ? (
+            // The #t fragment makes the browser render that frame as the
+            // poster, so a trailer shows itself rather than a generic icon.
+            <span className="relative flex h-full w-full items-center justify-center">
+              <video
+                src={`${fileUrl}#t=0.5`}
+                preload="metadata"
+                muted
+                playsInline
+                className="max-h-full max-w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.12]"
+              />
+              <span className="pointer-events-none absolute flex h-11 w-11 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
+                <Play className="h-4 w-4 translate-x-[1px] text-white" fill="currentColor" strokeWidth={0} />
+              </span>
+            </span>
           ) : (
             <Icon className="h-8 w-8 text-faint" strokeWidth={1.25} />
           )}
@@ -193,13 +209,24 @@ export function AssetCard({
           >
             <Close className="h-4 w-4" strokeWidth={1.5} />
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={fileUrl}
-            alt={asset.name}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[82vh] max-w-full rounded-lg object-contain"
-          />
+          {isVideo ? (
+            <video
+              src={fileUrl}
+              controls
+              autoPlay
+              playsInline
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[82vh] max-w-full rounded-lg"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={fileUrl}
+              alt={asset.name}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[82vh] max-w-full rounded-lg object-contain"
+            />
+          )}
           <div className="mt-4 flex items-center gap-3">
             <p className="text-[13px] text-faint">{asset.name}</p>
             <a

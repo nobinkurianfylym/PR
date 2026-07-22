@@ -62,3 +62,33 @@ export function linksIn(links: FilmLink[], ...groups: LinkGroup[]): ResolvedLink
     })
     .filter((x): x is ResolvedLink => x !== null);
 }
+
+/**
+ * Which platform a shared link came from, read off its domain — so coverage
+ * from Instagram, X, or YouTube is identifiable at a glance in the press kit
+ * rather than being an anonymous URL.
+ */
+const DOMAIN_PLATFORM: [RegExp, string][] = [
+  [/(^|\.)instagram\.com$/, "instagram"],
+  [/(^|\.)(x|twitter)\.com$/, "x"],
+  [/(^|\.)(facebook|fb)\.com$/, "facebook"],
+  [/(^|\.)(youtube\.com|youtu\.be)$/, "youtube"],
+  [/(^|\.)reddit\.com$/, "reddit"],
+  [/(^|\.)linkedin\.com$/, "linkedin"],
+  [/(^|\.)pinterest\.(com|co\.uk|in)$/, "pinterest"],
+  [/(^|\.)(t\.me|telegram\.me)$/, "telegram"],
+  [/(^|\.)(wa\.me|whatsapp\.com)$/, "whatsapp"],
+  [/(^|\.)letterboxd\.com$/, "letterboxd"],
+  [/(^|\.)imdb\.com$/, "imdb"],
+  [/(^|\.)open\.spotify\.com$/, "spotify"],
+  [/(^|\.)threads\.(net|com)$/, "instagram"],
+];
+
+export function platformFromUrl(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return DOMAIN_PLATFORM.find(([re]) => re.test(host))?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}

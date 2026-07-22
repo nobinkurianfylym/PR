@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, Check, Copy } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Globe } from "lucide-react";
 import { domainOf } from "@/lib/utils";
+import { platformFromUrl } from "@/lib/platforms";
+import { PlatformLogo } from "@/components/ui/platform-logo";
 
 export interface CoverageLink {
   id: string;
@@ -72,6 +74,13 @@ export function PressCoverage({
             <ul className="divide-y divide-border">
               {links.map((l) => (
                 <li key={l.id} className="group flex flex-wrap items-center gap-3 py-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted">
+                    {platformFromUrl(l.url) ? (
+                      <PlatformLogo platform={platformFromUrl(l.url)!} className="h-3.5 w-3.5" />
+                    ) : (
+                      <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    )}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <a
                       href={l.url}

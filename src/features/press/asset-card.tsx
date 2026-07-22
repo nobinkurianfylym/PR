@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Image as ImageIcon, Clapperboard, Archive, Camera, Shapes,
-  Download, Eye, Share2, Link2, X as Close, type LucideIcon,
+  Download, Eye, Share2, Link2, Copy, X as Close, type LucideIcon,
 } from "lucide-react";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 import type { AssetType } from "@/types";
@@ -25,13 +25,12 @@ function fmtSize(bytes: number): string {
 }
 
 /**
- * Share targets. Every one takes a *page* URL, not the file itself — each
- * asset has its own page carrying Open Graph tags, so a shared poster
- * unfurls as a real card and lands the reader back on the press kit.
- * Pinterest is the exception that also wants the raw image, which is why it
- * gets `media`.
+ * Link targets, kept as a secondary option. No social platform's web intent
+ * can carry a file — they accept a URL and nothing else — so these share the
+ * asset's own page, which unfurls with the image. Sharing the *file* is the
+ * primary path above, via the system share sheet.
  */
-const TARGETS: {
+const LINK_TARGETS: {
   id: string;
   label: string;
   href: (p: { page: string; image: string; text: string }) => string;
@@ -45,6 +44,17 @@ const TARGETS: {
   { id: "telegram", label: "Telegram", href: ({ page, text }) => `https://t.me/share/url?url=${page}&text=${text}` },
 ];
 
+/** Clipboards only reliably accept PNG, so anything else is redrawn as one. */
+async function toPngBlob(blob: Blob): Promise<Blob | null> {
+  if (blob.type === "image/png") return blob;
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0);
+  return new Promise((res) => canvas.toBlob((b) => res(b), "image/png"));
+}
+
 export function AssetCard({
   asset,
   slug,
@@ -56,12 +66,14 @@ export function AssetCard({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [previewing, setPreviewing] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isImage = asset.content_type.startsWith("image/");
   const Icon = TYPE_ICON[asset.type] ?? Camera;
   const fileUrl = `/api/assets/${asset.id}`;
+  const caption = `${filmTitle} — ${asset.type.toLowerCase()}`;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -72,7 +84,6 @@ export function AssetCard({
     return () => window.removeEventListener("mousedown", onDown);
   }, [menuOpen]);
 
-  // Esc closes the lightbox, and the page must not scroll behind it.
   useEffect(() => {
     if (!previewing) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPreviewing(false);
@@ -85,24 +96,69 @@ export function AssetCard({
     };
   }, [previewing]);
 
+  function say(msg: string) {
+    setFlash(msg);
+    setTimeout(() => setFlash(null), 2400);
+  }
+
   function openPreview() {
-    // Images get an in-page lightbox; anything else is better handled by the
-    // browser's own viewer.
     if (isImage) setPreviewing(true);
     else window.open(fileUrl, "_blank", "noopener");
   }
 
-  function share(target: (typeof TARGETS)[number]) {
+  /**
+   * Share the asset itself. The system share sheet is the only route that
+   * carries an actual file to Instagram, WhatsApp, Messages and the rest, so
+   * it is tried first. Where the browser cannot do it (most desktops), we open
+   * the menu instead, which offers the file by clipboard or download.
+   */
+  async function shareFile() {
+    setBusy(true);
+    try {
+      const blob = await (await fetch(fileUrl)).blob();
+      const file = new File([blob], asset.name, { type: blob.type || asset.content_type });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: filmTitle, text: caption });
+        return;
+      }
+      setMenuOpen(true);
+    } catch (e) {
+      // A cancelled share sheet is not an error worth reporting.
+      if (!(e instanceof DOMException && e.name === "AbortError")) setMenuOpen(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyImage() {
+    setBusy(true);
+    try {
+      const blob = await (await fetch(fileUrl)).blob();
+      const png = await toPngBlob(blob);
+      if (!png) throw new Error("convert failed");
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+      say("Image copied — paste it anywhere");
+      setMenuOpen(false);
+    } catch {
+      say("Couldn't copy — use Download");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function shareLink(target: (typeof LINK_TARGETS)[number]) {
     const origin = window.location.origin;
     const page = encodeURIComponent(`${origin}/press/${slug}/a/${asset.id}`);
     const image = encodeURIComponent(`${origin}${fileUrl}`);
-    const text = encodeURIComponent(`${filmTitle} — ${asset.type.toLowerCase()}`);
+    const text = encodeURIComponent(caption);
     window.open(target.href({ page, image, text }), "_blank", "noopener,width=600,height=640");
     setMenuOpen(false);
   }
 
   const action =
-    "inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition-colors hover:border-foreground/30 hover:text-foreground";
+    "inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition-colors hover:border-foreground/30 hover:text-foreground disabled:opacity-50";
+  const row =
+    "flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-muted transition-colors hover:bg-raised hover:text-foreground";
 
   return (
     <>
@@ -136,18 +192,31 @@ export function AssetCard({
             </button>
 
             <div ref={menuRef} className="relative">
-              <button onClick={() => setMenuOpen((v) => !v)} className={action}>
-                <Share2 className="h-3 w-3" strokeWidth={1.5} /> Share
+              {/* Primary: shares the file itself, not a link to it. */}
+              <button onClick={() => void shareFile()} disabled={busy} className={action}>
+                <Share2 className="h-3 w-3" strokeWidth={1.5} />
+                {busy ? "Preparing…" : "Share"}
               </button>
 
               {menuOpen && (
-                <div className="absolute bottom-full left-0 z-30 mb-1.5 w-44 overflow-hidden rounded-lg border border-border bg-surface shadow-2xl">
-                  {TARGETS.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => share(t)}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-muted transition-colors hover:bg-raised hover:text-foreground"
-                    >
+                <div className="absolute bottom-full left-0 z-30 mb-1.5 w-52 overflow-hidden rounded-lg border border-border bg-surface shadow-2xl">
+                  <p className="px-3 pb-1 pt-2 text-[10px] uppercase tracking-[0.14em] text-faint">
+                    Share the {asset.type.toLowerCase()}
+                  </p>
+                  {isImage && (
+                    <button onClick={() => void copyImage()} disabled={busy} className={row}>
+                      <Copy className="h-3.5 w-3.5" strokeWidth={1.5} /> Copy image
+                    </button>
+                  )}
+                  <a href={`${fileUrl}?download`} className={row} onClick={() => setMenuOpen(false)}>
+                    <Download className="h-3.5 w-3.5" strokeWidth={1.5} /> Download file
+                  </a>
+
+                  <p className="border-t border-border px-3 pb-1 pt-2 text-[10px] uppercase tracking-[0.14em] text-faint">
+                    Or share a link
+                  </p>
+                  {LINK_TARGETS.map((t) => (
+                    <button key={t.id} onClick={() => shareLink(t)} className={row}>
                       <PlatformLogo platform={t.id} className="h-3.5 w-3.5" />
                       {t.label}
                     </button>
@@ -157,11 +226,10 @@ export function AssetCard({
                       await navigator.clipboard.writeText(
                         `${window.location.origin}/press/${slug}/a/${asset.id}`,
                       );
-                      setCopied(true);
                       setMenuOpen(false);
-                      setTimeout(() => setCopied(false), 2000);
+                      say("Link copied");
                     }}
-                    className="flex w-full items-center gap-2.5 border-t border-border px-3 py-2 text-left text-[13px] text-muted transition-colors hover:bg-raised hover:text-foreground"
+                    className={`${row} border-t border-border`}
                   >
                     <Link2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Copy link
                   </button>
@@ -172,9 +240,9 @@ export function AssetCard({
             <a href={`${fileUrl}?download`} className={action} aria-label={`Download ${asset.name}`}>
               <Download className="h-3 w-3" strokeWidth={1.5} /> Download
             </a>
-
-            {copied && <span className="text-[11px] text-emerald-400">Link copied</span>}
           </div>
+
+          {flash && <p className="mt-2 text-[11px] text-emerald-400">{flash}</p>}
         </div>
       </article>
 
@@ -200,11 +268,13 @@ export function AssetCard({
             onClick={(e) => e.stopPropagation()}
             className="max-h-[82vh] max-w-full rounded-lg object-contain"
           />
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
             <p className="text-[13px] text-faint">{asset.name}</p>
+            <button onClick={() => void shareFile()} disabled={busy} className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline disabled:opacity-50">
+              <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Share
+            </button>
             <a
               href={`${fileUrl}?download`}
-              onClick={(e) => e.stopPropagation()}
               className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
             >
               <Download className="h-3.5 w-3.5" strokeWidth={1.5} /> Download

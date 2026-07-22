@@ -168,20 +168,25 @@ export default function AssetsPage() {
           {approved.map((a) => {
             const Icon = TYPE_ICON[a.type] ?? Camera;
             return (
-              <Card key={a.id} className="flex flex-col p-5">
-                <div className="flex h-24 items-center justify-center overflow-hidden rounded-lg bg-raised">
+              <Card key={a.id} className="group flex flex-col overflow-hidden p-0">
+                {/* Whole image, never cropped — grows on hover inside its frame. */}
+                <div className="flex h-56 items-center justify-center overflow-hidden bg-raised p-3">
                   {a.content_type.startsWith("image/") ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/api/assets/${a.id}`} alt={a.name} className="h-full w-full object-cover" />
+                    <img
+                      src={`/api/assets/${a.id}`}
+                      alt={a.name}
+                      loading="lazy"
+                      className="max-h-full max-w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.12]"
+                    />
                   ) : (
-                    <Icon className="h-7 w-7 text-faint" strokeWidth={1.25} />
+                    <Icon className="h-8 w-8 text-faint" strokeWidth={1.25} />
                   )}
                 </div>
-                <p className="mt-4 truncate text-sm font-medium">{a.name}</p>
-                <p className="mt-0.5 text-xs text-faint">
-                  {a.type} · {fmtSize(a.size)} · {formatDate(a.created_at.slice(0, 10))}
+                <p className="mt-3 truncate px-4 text-xs text-faint" title={a.name}>
+                  {a.name} · {fmtSize(a.size)} · {formatDate(a.created_at.slice(0, 10))}
                 </p>
-                <div className="mt-4 flex gap-1.5">
+                <div className="mb-3 mt-2 flex gap-1.5 px-3">
                   <Button variant="ghost" size="sm" onClick={() => window.open(`/api/assets/${a.id}`, "_blank")}>
                     <Eye className="h-3.5 w-3.5" strokeWidth={1.5} /> Preview
                   </Button>

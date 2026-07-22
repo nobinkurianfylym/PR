@@ -16,6 +16,7 @@ interface Brain {
   readiness: { met: number; total: number; percent: number };
   fundamentals: { label: string; fact: string; met: boolean }[];
   recommendation: Recommendation;
+  reasonedBy: "model" | "rules";
   priorities: { id: string; title: string; impact: string; due: string }[];
   phases: { phase: string; date: string; summary: string; status: string }[];
   risks: { title: string; severity: "High" | "Medium" | "Low"; evidence: string; action: string }[];
@@ -86,7 +87,7 @@ export default function CampaignBrainPage() {
         </div>
       </header>
 
-      <BrainHero rec={b.recommendation} onExecute={execute} />
+      <BrainHero rec={b.recommendation} reasonedBy={b.reasonedBy} onExecute={execute} />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">

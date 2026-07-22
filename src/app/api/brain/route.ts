@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
 import { activeFilmId } from "@/server/film";
 import { currentPhase } from "@/server/brain";
+import { reasonAboutCall } from "@/server/ai";
 import {
   budgetMove, fundamentals, liveFeed, readiness, recommendation, risks,
   type BrainState,
@@ -69,11 +71,35 @@ export async function GET() {
     opportunities: opportunities.results as BrainState["opportunities"],
   };
 
+  // The decision and every number stay deterministic; the model only
+  // rewrites the reasoning, and is rejected if it invents a figure.
+  const call = recommendation(state);
+  const reasoning = await reasonAboutCall(
+    {
+      title: state.title,
+      genre: String(film.genre ?? ""),
+      language: String(film.language ?? ""),
+      phase,
+      daysToRelease,
+      action: call.action,
+      facts: call.evidence,
+      fallback: { reasons: call.reasons, unblocks: call.unblocks, alternative: call.alternative },
+    },
+    (getCloudflareContext().env as unknown as { OPENAI_API_KEY?: string }).OPENAI_API_KEY,
+  );
+
   return NextResponse.json({
     film: { id: filmId, title: state.title, phase, daysToRelease, releaseDate: film.release_date },
     readiness: readiness(state),
     fundamentals: fundamentals(state),
-    recommendation: recommendation(state),
+    recommendation: {
+      ...call,
+      reasons: reasoning.reasons,
+      unblocks: reasoning.unblocks,
+      alternative: reasoning.alternative,
+    },
+    reasonedBy: reasoning.source,
+    reasonedNote: reasoning.note ?? null,
     priorities: state.openMissions.slice(0, 5),
     phases: phaseRows.map((p) => ({
       ...p,

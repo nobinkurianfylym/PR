@@ -20,9 +20,11 @@ export interface Recommendation {
  */
 export function BrainHero({
   rec,
+  reasonedBy,
   onExecute,
 }: {
   rec: Recommendation;
+  reasonedBy: "model" | "rules";
   onExecute: () => Promise<void>;
 }) {
   const [showReasoning, setShowReasoning] = useState(false);
@@ -38,6 +40,10 @@ export function BrainHero({
         </span>
         <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-faint">
           {rec.window}
+        </span>
+        {/* A producer should always know what wrote the words on screen. */}
+        <span className="text-[11px] uppercase tracking-[0.16em] text-faint">
+          · reasoning by {reasonedBy === "model" ? "AI" : "rules"}
         </span>
       </div>
 
@@ -110,9 +116,10 @@ export function BrainHero({
               The Brain walks this campaign&apos;s gaps in the order they block a
               release — key art, then trailer, then amplification, then a booking
               path, then proof, then any open window you have logged. The first
-              unmet condition becomes the call. It is a judgement about
-              sequencing, made from the facts listed above; it is not a
-              prediction, and it carries no forecast of results.
+              unmet condition becomes the call. That decision, and every figure
+              beside it, is computed from your campaign — the AI is given the
+              decision and those facts and writes only the explanation, and is
+              refused if it tries to introduce a number of its own.
             </p>
           </div>
           <div>

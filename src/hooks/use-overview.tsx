@@ -29,6 +29,9 @@ export interface Overview {
         healthScore: number;
         phase: CampaignPhase;
         daysToRelease: number;
+        /** Public press-kit slug and whether that page is live. */
+        slug: string;
+        published: number;
       }
     | null;
   /** Every campaign the producer owns, for the switcher. */
@@ -100,6 +103,7 @@ export const api = {
   signOut: () => post("/api/auth/signout"),
   createFilm: (film: Record<string, unknown>) => post("/api/films", film),
   selectFilm: (filmId: string) => post("/api/films/select", { filmId }),
+  setPublished: (published: boolean) => post("/api/films/publish", { published }),
   toggleMission: (id: string, done: boolean) => post(`/api/missions/${id}`, { done }, "PATCH"),
   invite: (name: string, role: string) => post("/api/team", { name, role }),
   addReview: (review: { quote: string; publication: string; critic: string; rating: number }) =>

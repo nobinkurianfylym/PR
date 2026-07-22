@@ -10,15 +10,20 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const { id } = await ctx.params;
   const url = new URL(req.url);
   const asset = await db()
-    .prepare("SELECT a.*, f.user_id FROM assets a JOIN films f ON f.id = a.film_id WHERE a.id = ?")
+    .prepare(
+      "SELECT a.*, f.user_id, f.published FROM assets a JOIN films f ON f.id = a.film_id WHERE a.id = ?",
+    )
     .bind(id)
-    .first<AssetRow & { user_id: string }>();
+    .first<AssetRow & { user_id: string; published: number }>();
   if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Owner, or anyone holding the share token.
+  // Owner, anyone holding the share token, or anyone at all when the
+  // campaign's press kit is published.
   const user = await currentUser();
   const token = url.searchParams.get("token");
-  if (user?.id !== asset.user_id && token !== asset.share_token) {
+  const allowed =
+    user?.id === asset.user_id || token === asset.share_token || asset.published === 1;
+  if (!allowed) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

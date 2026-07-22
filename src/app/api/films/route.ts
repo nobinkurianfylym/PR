@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
 import { setActiveFilm } from "@/server/film";
+import { uniqueSlug } from "@/server/slug";
 import { planCampaign, seedMissions } from "@/server/brain";
 
 /** All the producer's campaigns, newest first. */
@@ -31,14 +32,14 @@ export async function POST(req: Request) {
   await database
     .prepare(
       `INSERT INTO films (id, user_id, title, genre, language, budget, marketing_budget,
-       release_date, poster_url, trailer_url, cast, crew) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+       release_date, poster_url, trailer_url, cast, crew, slug) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     )
     .bind(
       filmId, user.id, title,
       String(b.genre ?? ""), String(b.language ?? ""),
       Number(b.budget ?? 0), Number(b.marketingBudget ?? 0),
       releaseDate, String(b.posterUrl ?? ""), String(b.trailerUrl ?? ""),
-      String(b.cast ?? ""), String(b.crew ?? ""),
+      String(b.cast ?? ""), String(b.crew ?? ""), await uniqueSlug(title),
     )
     .run();
 

@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatDate } from "@/hooks/use-overview";
+import { PressKitPanel } from "@/features/assets/press-kit-panel";
 import type { AssetType } from "@/types";
 
 interface AssetRow {
@@ -94,6 +95,8 @@ export default function AssetsPage() {
           </Button>
         </div>
       </div>
+
+      <PressKitPanel />
 
       {assets === null ? null : assets.length === 0 ? (
         <p className="mt-16 text-center text-sm text-faint">

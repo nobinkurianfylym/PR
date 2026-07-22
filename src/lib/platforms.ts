@@ -38,6 +38,15 @@ export interface FilmLink {
   url: string;
 }
 
+/** What a link shared with the production team is. */
+export const SHARED_LINK_KINDS = [
+  "Review",
+  "Social post",
+  "Article",
+  "Interview",
+  "Other",
+];
+
 export interface ResolvedLink {
   id: string;
   label: string;

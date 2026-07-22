@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { api, formatDate } from "@/hooks/use-overview";
 import { PressKitPanel } from "@/features/assets/press-kit-panel";
+import { SharedLinksInbox } from "@/features/assets/shared-links-inbox";
 import type { AssetType } from "@/types";
 
 interface AssetRow {
@@ -101,6 +102,8 @@ export default function AssetsPage() {
       </div>
 
       <PressKitPanel />
+
+      <SharedLinksInbox />
 
       {pending.length > 0 && (
         <section className="mt-8">

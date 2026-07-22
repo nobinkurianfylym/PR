@@ -7,13 +7,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { formatDate } from "@/hooks/use-overview";
+import { api, formatDate } from "@/hooks/use-overview";
 import { PressKitPanel } from "@/features/assets/press-kit-panel";
 import type { AssetType } from "@/types";
 
 interface AssetRow {
   id: string; name: string; type: AssetType; content_type: string;
   size: number; share_token: string; created_at: string;
+  status: "approved" | "pending"; submitted_by: string;
 }
 
 const TYPE_ICON: Record<AssetType, LucideIcon> = {
@@ -55,6 +56,9 @@ export default function AssetsPage() {
     setSharedId(a.id);
     setTimeout(() => setSharedId(null), 2000);
   }
+
+  const approved = (assets ?? []).filter((a) => a.status !== "pending");
+  const pending = (assets ?? []).filter((a) => a.status === "pending");
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -98,13 +102,70 @@ export default function AssetsPage() {
 
       <PressKitPanel />
 
-      {assets === null ? null : assets.length === 0 ? (
+      {pending.length > 0 && (
+        <section className="mt-8">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-medium">
+              Submissions awaiting review
+            </h2>
+            <span className="text-xs text-faint">{pending.length} pending</span>
+          </div>
+          <p className="mt-1 text-[13px] text-faint">
+            Sent from your public press kit. Nothing here is visible to the
+            public until you approve it.
+          </p>
+          <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-surface">
+            {pending.map((a) => (
+              <div key={a.id} className="flex items-center gap-4 p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{a.name}</p>
+                  <p className="mt-0.5 text-xs text-faint">
+                    {a.type} · {fmtSize(a.size)}
+                    {a.submitted_by ? ` · from ${a.submitted_by}` : " · anonymous"}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.open(`/api/assets/${a.id}`, "_blank")}
+                >
+                  <Eye className="h-3.5 w-3.5" strokeWidth={1.5} /> Review
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    await api.approveAsset(a.id);
+                    await load();
+                  }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Reject ${a.name}`}
+                  onClick={async () => {
+                    if (confirm(`Reject and delete ${a.name}?`)) {
+                      await fetch(`/api/assets/${a.id}`, { method: "DELETE" });
+                      await load();
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {assets === null ? null : approved.length === 0 ? (
         <p className="mt-16 text-center text-sm text-faint">
           The vault is empty — upload your first poster, trailer, or EPK.
         </p>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {assets.map((a) => {
+          {approved.map((a) => {
             const Icon = TYPE_ICON[a.type] ?? Camera;
             return (
               <Card key={a.id} className="flex flex-col p-5">

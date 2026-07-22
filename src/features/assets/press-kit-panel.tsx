@@ -19,6 +19,7 @@ export function PressKitPanel() {
 
   const { slug, published } = data.film;
   const isLive = published === 1;
+  const submissionsOpen = data.film.submissions_open === 1;
   const url = typeof window === "undefined" ? "" : `${window.location.origin}/press/${slug}`;
 
   async function toggle() {
@@ -51,6 +52,28 @@ export function PressKitPanel() {
           <code className="mt-3 block truncate rounded-lg border border-border bg-raised px-3 py-2 text-[13px] text-foreground">
             /press/{slug}
           </code>
+
+          <label className="mt-4 flex items-start gap-2.5 text-[13px] text-muted">
+            <input
+              type="checkbox"
+              checked={submissionsOpen}
+              disabled={busy}
+              onChange={async (e) => {
+                setBusy(true);
+                await api.setSubmissionsOpen(e.target.checked);
+                await refresh();
+                setBusy(false);
+              }}
+              className="mt-0.5"
+            />
+            <span>
+              Let anyone submit material from this page
+              <span className="block text-faint">
+                Submissions are held for your review — nothing appears publicly
+                until you approve it.
+              </span>
+            </span>
+          </label>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">

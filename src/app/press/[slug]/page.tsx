@@ -5,6 +5,7 @@ import {
   Download, type LucideIcon,
 } from "lucide-react";
 import { db } from "@/server/db";
+import { SubmitForm } from "@/features/press/submit-form";
 import type { AssetType } from "@/types";
 
 /** Reads D1 per request — press kits must reflect the vault immediately. */
@@ -16,6 +17,7 @@ interface FilmRow {
   genre: string;
   language: string;
   release_date: string;
+  submissions_open: number;
 }
 
 interface AssetRow {
@@ -32,7 +34,7 @@ const TYPE_ICON: Record<AssetType, LucideIcon> = {
 
 async function getFilm(slug: string): Promise<FilmRow | null> {
   return db()
-    .prepare("SELECT id, title, genre, language, release_date FROM films WHERE slug = ? AND published = 1")
+    .prepare("SELECT id, title, genre, language, release_date, submissions_open FROM films WHERE slug = ? AND published = 1")
     .bind(slug)
     .first<FilmRow>();
 }
@@ -67,7 +69,7 @@ export default async function PressKitPage(
   if (!film) notFound();
 
   const { results: assets } = await db()
-    .prepare("SELECT id, name, type, content_type, size FROM assets WHERE film_id = ? ORDER BY created_at DESC")
+    .prepare("SELECT id, name, type, content_type, size FROM assets WHERE film_id = ? AND status = 'approved' ORDER BY created_at DESC")
     .bind(film.id)
     .all<AssetRow>();
 
@@ -130,6 +132,8 @@ export default async function PressKitPage(
           })}
         </div>
       )}
+
+      {film.submissions_open === 1 && <SubmitForm slug={slug} />}
 
       <footer className="mt-20 border-t border-border pt-6 text-xs text-faint">
         Press kit powered by PR.FYLYM

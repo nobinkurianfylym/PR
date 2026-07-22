@@ -11,7 +11,10 @@ export async function GET() {
   const filmId = await userFilm(user.id);
   if (!filmId) return NextResponse.json({ assets: [] });
   const { results } = await db()
-    .prepare("SELECT id, name, type, content_type, size, share_token, created_at FROM assets WHERE film_id = ? ORDER BY created_at DESC")
+    .prepare(
+      `SELECT id, name, type, content_type, size, share_token, created_at, status, submitted_by
+         FROM assets WHERE film_id = ? ORDER BY created_at DESC`,
+    )
     .bind(filmId)
     .all();
   return NextResponse.json({ assets: results });

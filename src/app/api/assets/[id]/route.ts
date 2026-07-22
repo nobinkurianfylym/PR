@@ -14,15 +14,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       "SELECT a.*, f.user_id, f.published FROM assets a JOIN films f ON f.id = a.film_id WHERE a.id = ?",
     )
     .bind(id)
-    .first<AssetRow & { user_id: string; published: number }>();
+    .first<AssetRow & { user_id: string; published: number; status: string }>();
   if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Owner, anyone holding the share token, or anyone at all when the
-  // campaign's press kit is published.
+  // Owner, anyone holding the share token, or anyone at all when the campaign
+  // is published — but a pending public submission is never served to anyone
+  // except the owner reviewing it.
   const user = await currentUser();
+  const isOwner = user?.id === asset.user_id;
   const token = url.searchParams.get("token");
-  const allowed =
-    user?.id === asset.user_id || token === asset.share_token || asset.published === 1;
+  const publiclyVisible = asset.published === 1 && asset.status === "approved";
+  const allowed = isOwner || (asset.status === "approved" && token === asset.share_token) || publiclyVisible;
   if (!allowed) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -52,4 +54,23 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   await bucket().delete(asset.r2_key);
   await db().prepare("DELETE FROM assets WHERE id = ?").bind(id).run();
   return new NextResponse(null, { status: 204 });
+}
+
+/** Approve a public submission into the vault (owner only). */
+export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await ctx.params;
+  const { status } = (await req.json()) as { status?: string };
+  if (status !== "approved") {
+    return NextResponse.json({ error: "Unsupported status" }, { status: 400 });
+  }
+  await db()
+    .prepare(
+      `UPDATE assets SET status = 'approved' WHERE id = ?
+       AND film_id IN (SELECT id FROM films WHERE user_id = ?)`,
+    )
+    .bind(id, user.id)
+    .run();
+  return NextResponse.json({ ok: true });
 }

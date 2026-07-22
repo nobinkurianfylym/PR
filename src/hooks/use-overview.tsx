@@ -32,6 +32,7 @@ export interface Overview {
         /** Public press-kit slug and whether that page is live. */
         slug: string;
         published: number;
+        submissions_open: number;
       }
     | null;
   /** Every campaign the producer owns, for the switcher. */
@@ -104,6 +105,8 @@ export const api = {
   createFilm: (film: Record<string, unknown>) => post("/api/films", film),
   selectFilm: (filmId: string) => post("/api/films/select", { filmId }),
   setPublished: (published: boolean) => post("/api/films/publish", { published }),
+  setSubmissionsOpen: (open: boolean) => post("/api/films/submissions", { open }),
+  approveAsset: (id: string) => post(`/api/assets/${id}`, { status: "approved" }, "PATCH"),
   toggleMission: (id: string, done: boolean) => post(`/api/missions/${id}`, { done }, "PATCH"),
   invite: (name: string, role: string) => post("/api/team", { name, role }),
   addReview: (review: { quote: string; publication: string; critic: string; rating: number }) =>

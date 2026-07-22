@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import {
-  Image as ImageIcon, Clapperboard, Archive, Camera, Shapes,
-  Download, Ticket, type LucideIcon,
-} from "lucide-react";
+import { Ticket } from "lucide-react";
 import { db } from "@/server/db";
+import { AssetCard, type PressAsset } from "@/features/press/asset-card";
 import { SubmitForm } from "@/features/press/submit-form";
 import { ShareRow } from "@/features/press/share-row";
 import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
-import type { AssetType } from "@/types";
 
 /** Reads D1 per request — press kits must reflect the vault immediately. */
 export const dynamic = "force-dynamic";
@@ -24,18 +21,6 @@ interface FilmRow {
   release_date: string;
   submissions_open: number;
 }
-
-interface AssetRow {
-  id: string;
-  name: string;
-  type: AssetType;
-  content_type: string;
-  size: number;
-}
-
-const TYPE_ICON: Record<AssetType, LucideIcon> = {
-  Poster: ImageIcon, Trailer: Clapperboard, EPK: Archive, Stills: Camera, Logo: Shapes,
-};
 
 async function getFilm(slug: string): Promise<FilmRow | null> {
   return db()
@@ -71,10 +56,6 @@ async function getShareImage(filmId: string): Promise<string | null> {
 async function origin(): Promise<string> {
   const host = (await headers()).get("host") ?? "";
   return `${host.startsWith("localhost") ? "http" : "https"}://${host}`;
-}
-
-function fmtSize(bytes: number): string {
-  return bytes > 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1e3))} KB`;
 }
 
 function fmtDate(iso: string): string {
@@ -124,7 +105,7 @@ export default async function PressKitPage(
         "SELECT id, name, type, content_type, size FROM assets WHERE film_id = ? AND status = 'approved' ORDER BY created_at DESC",
       )
       .bind(film.id)
-      .all<AssetRow>(),
+      .all<PressAsset>(),
     getLinks(film.id),
     db()
       .prepare(
@@ -212,43 +193,9 @@ export default async function PressKitPage(
         </p>
       ) : (
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {assets.map((a) => {
-            const Icon = TYPE_ICON[a.type] ?? Camera;
-            return (
-              <article
-                key={a.id}
-                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-foreground/25"
-              >
-                {/* Whole image, never cropped — it grows on hover without
-                    disturbing the grid. */}
-                <div className="flex h-64 items-center justify-center overflow-hidden bg-raised p-3">
-                  {a.content_type.startsWith("image/") ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={`/api/assets/${a.id}`}
-                      alt={a.name}
-                      loading="lazy"
-                      className="max-h-full max-w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.12]"
-                    />
-                  ) : (
-                    <Icon className="h-8 w-8 text-faint" strokeWidth={1.25} />
-                  )}
-                </div>
-                <div className="flex items-center justify-between gap-3 px-4 py-3">
-                  <p className="min-w-0 truncate text-xs text-faint" title={a.name}>
-                    {a.name} · {fmtSize(a.size)}
-                  </p>
-                  <a
-                    href={`/api/assets/${a.id}?download`}
-                    aria-label={`Download ${a.name}`}
-                    className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-medium hover:underline"
-                  >
-                    <Download className="h-3.5 w-3.5" strokeWidth={1.5} /> Download
-                  </a>
-                </div>
-              </article>
-            );
-          })}
+          {assets.map((a) => (
+            <AssetCard key={a.id} asset={a} slug={slug} filmTitle={film.title} />
+          ))}
         </div>
       )}
 

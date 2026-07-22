@@ -89,8 +89,8 @@ export default function CampaignBrainPage() {
 
       <BrainHero rec={b.recommendation} reasonedBy={b.reasonedBy} onExecute={execute} />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <div className="space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-6">
           <Panel
             title="Today's priorities"
             hint="The five highest-impact actions open right now."
@@ -206,7 +206,7 @@ export default function CampaignBrainPage() {
           >
             {addingCompetitor && (
               <form
-                className="mb-4 grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1fr_1.4fr_auto]"
+                className="mb-4 grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-2"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const f = new FormData(e.currentTarget as HTMLFormElement);
@@ -219,7 +219,7 @@ export default function CampaignBrainPage() {
                 <Input name="title" required placeholder="Competing film" aria-label="Competing film" />
                 <Input name="event" required placeholder="What they did — e.g. trailer drops" aria-label="Their move" />
                 <div className="flex gap-2">
-                  <Input name="eventDate" type="date" aria-label="When" className="w-36" />
+                  <Input name="eventDate" type="date" aria-label="When" className="min-w-0 flex-1" />
                   <Button type="submit" size="sm">Add</Button>
                 </div>
               </form>
@@ -265,7 +265,7 @@ export default function CampaignBrainPage() {
           >
             {addingOpportunity && (
               <form
-                className="mb-4 grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1.6fr_auto_auto_auto]"
+                className="mb-4 grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-2"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const f = new FormData(e.currentTarget as HTMLFormElement);
@@ -285,9 +285,9 @@ export default function CampaignBrainPage() {
                     <option key={k}>{k}</option>
                   ))}
                 </select>
-                <Input name="reach" type="number" min="0" placeholder="Reach" aria-label="Potential reach" className="w-28" />
+                <Input name="reach" type="number" min="0" placeholder="Potential reach" aria-label="Potential reach" />
                 <div className="flex gap-2">
-                  <Input name="windowEnds" type="date" aria-label="Window closes" className="w-36" />
+                  <Input name="windowEnds" type="date" aria-label="Window closes" className="min-w-0 flex-1" />
                   <Button type="submit" size="sm">Add</Button>
                 </div>
               </form>
@@ -343,8 +343,8 @@ export default function CampaignBrainPage() {
           </Panel>
         </div>
 
-        {/* Rail: the score, the forecast, and the Brain thinking aloud. */}
-        <div className="space-y-6">
+        {/* Rail: the score and the Brain thinking aloud. */}
+        <div className="min-w-0 space-y-6">
           <Panel
             title="Campaign readiness"
             hint="Tracked fundamentals that are actually in place."

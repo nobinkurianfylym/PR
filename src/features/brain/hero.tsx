@@ -51,7 +51,7 @@ export function BrainHero({
         {rec.action}
       </h1>
 
-      <div className="mt-7 grid gap-8 lg:grid-cols-[1.35fr_1fr]">
+      <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
             Why now

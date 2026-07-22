@@ -11,7 +11,7 @@ export async function GET() {
   if (!filmId) return NextResponse.json({ links: [] });
   const { results } = await db()
     .prepare(
-      `SELECT id, url, kind, note, submitted_by, created_at FROM shared_links
+      `SELECT id, url, kind, note, submitted_by, created_at, status, label FROM shared_links
         WHERE film_id = ? ORDER BY created_at DESC, rowid DESC`,
     )
     .bind(filmId)

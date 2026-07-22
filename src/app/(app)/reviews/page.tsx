@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,13 +9,26 @@ import { Field, Input } from "@/components/ui/input";
 import { ReviewCard } from "@/features/reviews/review-card";
 import { api, useOverview } from "@/hooks/use-overview";
 
-export default function ReviewsPage() {
+function ReviewsInner() {
   const { data, refresh } = useOverview();
+  const params = useSearchParams();
   const [adding, setAdding] = useState(false);
   const [quote, setQuote] = useState("");
   const [publication, setPublication] = useState("");
   const [critic, setCritic] = useState("");
   const [rating, setRating] = useState("4");
+
+  // Arriving from "Add to Review Wall" on an approved coverage link.
+  useEffect(() => {
+    const pub = params.get("publication");
+    const cri = params.get("critic");
+    if (pub || cri) {
+      if (pub) setPublication(pub);
+      if (cri) setCritic(cri);
+      setAdding(true);
+    }
+  }, [params]);
+
   if (!data?.film) return null;
 
   async function submit(e: React.FormEvent) {
@@ -96,5 +110,13 @@ export default function ReviewsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ReviewsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReviewsInner />
+    </Suspense>
   );
 }

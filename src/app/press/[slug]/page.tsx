@@ -8,7 +8,8 @@ import {
 import { db } from "@/server/db";
 import { SubmitForm } from "@/features/press/submit-form";
 import { ShareRow } from "@/features/press/share-row";
-import { linksIn, type FilmLink } from "@/lib/platforms";
+import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
+import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 import type { AssetType } from "@/types";
 
@@ -117,7 +118,7 @@ export default async function PressKitPage(
   const film = await getFilm(slug);
   if (!film) notFound();
 
-  const [{ results: assets }, links] = await Promise.all([
+  const [{ results: assets }, links, { results: coverage }] = await Promise.all([
     db()
       .prepare(
         "SELECT id, name, type, content_type, size FROM assets WHERE film_id = ? AND status = 'approved' ORDER BY created_at DESC",
@@ -125,7 +126,21 @@ export default async function PressKitPage(
       .bind(film.id)
       .all<AssetRow>(),
     getLinks(film.id),
+    db()
+      .prepare(
+        `SELECT id, url, kind, label FROM shared_links
+          WHERE film_id = ? AND status = 'approved'
+          ORDER BY created_at DESC, rowid DESC`,
+      )
+      .bind(film.id)
+      .all<CoverageLink>(),
   ]);
+
+  // Group coverage in the catalogue's order, dropping empty kinds.
+  const coverageGroups = SHARED_LINK_KINDS.map((kind) => ({
+    kind,
+    links: coverage.filter((c) => c.kind === kind),
+  })).filter((g) => g.links.length > 0);
 
   const ticketLinks = linksIn(links, "tickets");
   // Everything else rides in one row under the tickets button.
@@ -235,6 +250,10 @@ export default async function PressKitPage(
             );
           })}
         </div>
+      )}
+
+      {coverageGroups.length > 0 && (
+        <PressCoverage film={film.title} groups={coverageGroups} />
       )}
 
       <ShareRow title={film.title} caption={caption} />

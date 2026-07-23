@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, Check, Copy, Globe } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Globe, Play } from "lucide-react";
 import { domainOf } from "@/lib/utils";
 import { recordShare } from "@/lib/fan-share";
 import { platformFromUrl } from "@/lib/platforms";
@@ -12,6 +12,7 @@ export interface CoverageLink {
   url: string;
   kind: string;
   label: string;
+  image: string;
 }
 
 /**
@@ -76,14 +77,40 @@ export function PressCoverage({
 
             <ul className="divide-y divide-border">
               {links.map((l) => (
-                <li key={l.id} className="group flex flex-wrap items-center gap-3 py-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted">
-                    {platformFromUrl(l.url) ? (
-                      <PlatformLogo platform={platformFromUrl(l.url)!} className="h-3.5 w-3.5" />
+                <li key={l.id} className="group flex items-center gap-3 py-3 sm:gap-4">
+                  <a
+                    href={l.url}
+                    target="_blank"
+                    rel="noopener nofollow"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    className="relative block h-[63px] w-28 shrink-0 overflow-hidden rounded-lg border border-border bg-raised"
+                  >
+                    {l.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={l.image}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                      />
                     ) : (
-                      <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      <span className="flex h-full w-full items-center justify-center text-muted">
+                        {platformFromUrl(l.url) ? (
+                          <PlatformLogo platform={platformFromUrl(l.url)!} className="h-5 w-5" />
+                        ) : (
+                          <Globe className="h-5 w-5" strokeWidth={1.5} />
+                        )}
+                      </span>
                     )}
-                  </span>
+                    {l.image && /(youtube\.com|youtu\.be)/i.test(l.url) && (
+                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
+                          <Play className="h-3.5 w-3.5 translate-x-[1px] text-white" fill="currentColor" strokeWidth={0} />
+                        </span>
+                      </span>
+                    )}
+                  </a>
                   <div className="min-w-0 flex-1">
                     <a
                       href={l.url}

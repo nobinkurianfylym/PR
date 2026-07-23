@@ -113,7 +113,7 @@ export default async function PressKitPage(
     getLinks(film.id),
     db()
       .prepare(
-        `SELECT id, url, kind, label FROM shared_links
+        `SELECT id, url, kind, label, image FROM shared_links
           WHERE film_id = ? AND status = 'approved'
           ORDER BY created_at DESC, rowid DESC`,
       )

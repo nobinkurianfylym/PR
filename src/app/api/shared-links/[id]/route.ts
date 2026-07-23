@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
+import { resolvePreviewImage } from "@/server/preview-image";
 
 /** Publish a shared link to the press kit, pull it back, or retitle it. */
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -31,6 +32,26 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       .bind(label.slice(0, 160), id, user.id)
       .run();
   }
+
+  // On publish, resolve a preview thumbnail once (YouTube frame or og:image)
+  // if we don't have one yet. Best-effort — a link never fails to publish
+  // because a thumbnail couldn't be fetched.
+  if (status === "approved") {
+    const row = await database
+      .prepare(`SELECT url, image FROM shared_links WHERE id = ? ${owned}`)
+      .bind(id, user.id)
+      .first<{ url: string; image: string }>();
+    if (row && !row.image) {
+      const image = await resolvePreviewImage(row.url);
+      if (image) {
+        await database
+          .prepare("UPDATE shared_links SET image = ? WHERE id = ?")
+          .bind(image, id)
+          .run();
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
 

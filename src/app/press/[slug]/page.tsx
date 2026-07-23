@@ -7,7 +7,7 @@ import { AssetCard, type PressAsset } from "@/features/press/asset-card";
 import { SectionNav, SectionHeading } from "@/components/ui/section-nav";
 import { groupAssets } from "@/lib/asset-sections";
 import { SubmitForm } from "@/features/press/submit-form";
-import { ShareRow } from "@/features/press/share-row";
+import { ShareMenu } from "@/features/press/share-menu";
 import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
 import { FanJoinBar } from "@/features/press/fan-join-bar";
 import { FanLeaderboard } from "@/features/press/fan-leaderboard";
@@ -141,8 +141,8 @@ export default async function PressKitPage(
   const ticketLinks = linksIn(links, "tickets");
   // Everything else rides in one row under the tickets button.
   const pageLinks = linksIn(links, "official", "social");
-  const caption = `${film.title} — official press kit.${
-    film.release_date ? ` In cinemas ${fmtDate(film.release_date)}.` : ""
+  const caption = `LOVE ${film.title}? JOIN THE FAN CLUB${
+    film.release_date ? ` — in cinemas ${fmtDate(film.release_date)}.` : "."
   }`;
 
   return (
@@ -152,9 +152,14 @@ export default async function PressKitPage(
         <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-indigo-600">
           Official Fan Page
         </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-6xl">
-          {film.title}
-        </h1>
+        <div className="mt-3 flex items-start justify-between gap-4">
+          <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
+            {film.title}
+          </h1>
+          <div className="mt-1 shrink-0">
+            <ShareMenu slug={slug} caption={caption} />
+          </div>
+        </div>
         <p className="mt-3 text-sm text-muted">
           {[film.genre, film.language].filter(Boolean).join(" · ")}
           {film.release_date && ` · In cinemas ${fmtDate(film.release_date)}`}
@@ -165,8 +170,11 @@ export default async function PressKitPage(
           review. Everything below is official and cleared to share.
         </p>
 
-        <div className="mt-7">
-          <FanJoinBar slug={slug} film={film.title} />
+        <div className="mt-7 flex flex-wrap items-start gap-3">
+          <div>
+            <FanJoinBar slug={slug} film={film.title} />
+          </div>
+          {film.submissions_open === 1 && <SubmitForm slug={slug} />}
         </div>
 
         {ticketLinks.length > 0 && (
@@ -255,11 +263,7 @@ export default async function PressKitPage(
         </section>
       )}
 
-      <ShareRow slug={slug} title={film.title} caption={caption} />
-
       <FanLeaderboard slug={slug} />
-
-      {film.submissions_open === 1 && <SubmitForm slug={slug} />}
 
       <footer className="mt-20 border-t border-border pt-8 text-sm">
         <p className="font-medium text-foreground">

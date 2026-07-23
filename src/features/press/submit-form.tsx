@@ -78,7 +78,7 @@ export function SubmitForm({ slug }: { slug: string }) {
 
   if (sent) {
     return (
-      <div className="mt-10 flex items-center gap-2 rounded-xl border border-emerald-900 bg-surface px-5 py-4 text-sm text-emerald-400">
+      <div className="flex w-full items-center gap-2 rounded-xl border border-emerald-500/40 bg-surface px-5 py-4 text-sm text-emerald-600">
         <Check className="h-4 w-4 shrink-0" strokeWidth={1.5} />
         {sent === "file"
           ? "Thank you — your material was sent to the production team for review."
@@ -101,13 +101,13 @@ export function SubmitForm({ slug }: { slug: string }) {
   );
 
   return (
-    <div className="mt-10">
+    <div className={open ? "w-full" : undefined}>
       {!open ? (
-        <Button variant="outline" onClick={() => setOpen(true)}>
+        <Button variant="outline" size="lg" onClick={() => setOpen(true)}>
           <Upload className="h-4 w-4" strokeWidth={1.5} /> Submit material
         </Button>
       ) : (
-        <form onSubmit={submit} className="rounded-xl border border-border bg-surface p-5">
+        <form onSubmit={submit} className="w-full rounded-xl border border-border bg-surface p-5">
           <p className="text-sm font-medium">Send material to the production</p>
           <p className="mt-1 text-[13px] leading-relaxed text-faint">
             Upload a file, or share a link to a review, a social post, or any

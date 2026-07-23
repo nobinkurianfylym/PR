@@ -261,8 +261,30 @@ export default async function PressKitPage(
 
       {film.submissions_open === 1 && <SubmitForm slug={slug} />}
 
-      <footer className="mt-20 border-t border-border pt-6 text-xs text-faint">
-        Press kit powered by PR.FYLYM
+      <footer className="mt-20 border-t border-border pt-8 text-sm">
+        <p className="font-medium text-foreground">
+          Build your movie&rsquo;s fan universe.{" "}
+          <a
+            href="https://www.pr.fylym.com"
+            target="_blank"
+            rel="noopener"
+            className="text-indigo-600 underline-offset-2 hover:underline"
+          >
+            www.pr.fylym.com
+          </a>
+        </p>
+        <p className="mt-1.5 text-xs text-faint">
+          Powered by{" "}
+          <a
+            href="https://www.fylym.com"
+            target="_blank"
+            rel="noopener"
+            className="text-muted underline-offset-2 hover:text-foreground hover:underline"
+          >
+            www.fylym.com
+          </a>{" "}
+          — Where ambitious films begin.
+        </p>
       </footer>
       </div>
     </div>

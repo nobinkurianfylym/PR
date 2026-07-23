@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Link2, Share2 } from "lucide-react";
+import { recordShare } from "@/lib/fan-share";
 
 /**
  * Share intents — each opens the platform's own composer with the kit link
@@ -38,7 +39,7 @@ const INTENTS: { id: string; label: string; href: (url: string, text: string) =>
   },
 ];
 
-export function ShareRow({ title, caption }: { title: string; caption: string }) {
+export function ShareRow({ slug, title, caption }: { slug: string; title: string; caption: string }) {
   const [copied, setCopied] = useState<"link" | "caption" | null>(null);
 
   function shareUrl(): string {
@@ -47,6 +48,7 @@ export function ShareRow({ title, caption }: { title: string; caption: string })
 
   async function copy(what: "link" | "caption") {
     await navigator.clipboard.writeText(what === "link" ? shareUrl() : caption);
+    void recordShare(slug, `page:copy-${what}`);
     setCopied(what);
     setTimeout(() => setCopied(null), 2000);
   }
@@ -63,13 +65,14 @@ export function ShareRow({ title, caption }: { title: string; caption: string })
         {INTENTS.map((i) => (
           <button
             key={i.id}
-            onClick={() =>
+            onClick={() => {
               window.open(
                 i.href(encodeURIComponent(shareUrl()), encodeURIComponent(caption)),
                 "_blank",
                 "noopener,width=600,height=640",
-              )
-            }
+              );
+              void recordShare(slug, `page:${i.id}`);
+            }}
             className={base}
           >
             {i.label}

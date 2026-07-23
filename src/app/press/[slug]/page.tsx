@@ -9,7 +9,8 @@ import { groupAssets } from "@/lib/asset-sections";
 import { SubmitForm } from "@/features/press/submit-form";
 import { ShareRow } from "@/features/press/share-row";
 import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
-import { FanClub } from "@/features/press/fan-club";
+import { FanJoinBar } from "@/features/press/fan-join-bar";
+import { FanLeaderboard } from "@/features/press/fan-leaderboard";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 
@@ -147,8 +148,8 @@ export default async function PressKitPage(
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-6 pb-[45vh] pt-16 md:px-10">
       <header className="border-b border-border pb-10">
-        <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-faint">
-          Press Kit
+        <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-indigo-300">
+          Official Fan Page
         </p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-6xl">
           {film.title}
@@ -158,9 +159,14 @@ export default async function PressKitPage(
           {film.release_date && ` · In cinemas ${fmtDate(film.release_date)}`}
         </p>
         <p className="mt-6 max-w-xl text-sm leading-relaxed text-faint">
-          Official materials for press and partners. Everything here is cleared
-          for publication — download and use freely.
+          Join the fan club for first-look updates, contests and premiere-ticket
+          draws — and earn points every time you share a poster, trailer or
+          review. Everything below is official and cleared to share.
         </p>
+
+        <div className="mt-7">
+          <FanJoinBar slug={slug} film={film.title} />
+        </div>
 
         {ticketLinks.length > 0 && (
           <div className="mt-7 flex flex-wrap gap-2">
@@ -224,7 +230,7 @@ export default async function PressKitPage(
 
       {coverageGroups.length > 0 && (
         <div id="reviews" className="scroll-mt-24">
-          <PressCoverage film={film.title} groups={coverageGroups} />
+          <PressCoverage slug={slug} film={film.title} groups={coverageGroups} />
         </div>
       )}
 
@@ -248,9 +254,9 @@ export default async function PressKitPage(
         </section>
       )}
 
-      <ShareRow title={film.title} caption={caption} />
+      <ShareRow slug={slug} title={film.title} caption={caption} />
 
-      <FanClub slug={slug} film={film.title} />
+      <FanLeaderboard slug={slug} />
 
       {film.submissions_open === 1 && <SubmitForm slug={slug} />}
 

@@ -6,6 +6,7 @@ import {
   Download, Eye, Share2, Link2, Play, X as Close, type LucideIcon,
 } from "lucide-react";
 import { PlatformLogo } from "@/components/ui/platform-logo";
+import { recordShare } from "@/lib/fan-share";
 import type { AssetType } from "@/types";
 
 const TYPE_ICON: Record<AssetType, LucideIcon> = {
@@ -100,6 +101,8 @@ export function AssetCard({
     const image = encodeURIComponent(`${origin}${fileUrl}`);
     const text = encodeURIComponent(`${filmTitle} — ${asset.type.toLowerCase()}`);
     window.open(target.href({ page, image, text }), "_blank", "noopener,width=600,height=640");
+    // Reward the fan for sharing this asset on this platform (once per pair).
+    void recordShare(slug, `asset:${asset.id}:${target.id}`);
     setMenuOpen(false);
   }
 
@@ -174,6 +177,7 @@ export function AssetCard({
                       await navigator.clipboard.writeText(
                         `${window.location.origin}/press/${slug}/a/${asset.id}`,
                       );
+                      void recordShare(slug, `asset:${asset.id}:copy`);
                       setCopied(true);
                       setMenuOpen(false);
                       setTimeout(() => setCopied(false), 2000);

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
+import { award, currentFan, fanRank, setFanCookie } from "@/server/fan";
 
 /**
- * Public fan-club sign-up. No account — like the material-submission form,
- * anyone can join with an email. Idempotent per film, so a repeat sign-up is
- * a success, not a duplicate.
+ * Public fan-club sign-up. No account — anyone joins with an email. Idempotent
+ * per film. On join we set the fan-identity cookie and grant the welcome
+ * points, so the very first thing a new fan sees is a score and a rank.
  */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,7 +24,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
 
-  await db()
+  const database = db();
+  await database
     .prepare(
       `INSERT INTO fans (id, film_id, name, email, city) VALUES (?,?,?,?,?)
        ON CONFLICT(film_id, email) DO UPDATE SET
@@ -38,5 +40,30 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
     )
     .run();
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  const fan = await database
+    .prepare("SELECT id FROM fans WHERE film_id = ? AND email = ?")
+    .bind(film.id, email)
+    .first<{ id: string }>();
+  if (fan) {
+    await setFanCookie(film.id, fan.id);
+    await award(film.id, fan.id, "join", "welcome");
+  }
+
+  const me = await currentFan(film.id);
+  const rank = me ? await fanRank(film.id, me.id) : null;
+  return NextResponse.json({ ok: true, fan: me, rank }, { status: 201 });
+}
+
+/** The current fan for this film (from the cookie), with their rank. */
+export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
+  const { slug } = await ctx.params;
+  const film = await db()
+    .prepare("SELECT id FROM films WHERE slug = ? AND published = 1")
+    .bind(slug)
+    .first<{ id: string }>();
+  if (!film) return NextResponse.json({ fan: null });
+
+  const me = await currentFan(film.id);
+  const rank = me ? await fanRank(film.id, me.id) : null;
+  return NextResponse.json({ fan: me, rank });
 }

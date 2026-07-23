@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowUpRight, Check, Copy, Globe } from "lucide-react";
 import { domainOf } from "@/lib/utils";
+import { recordShare } from "@/lib/fan-share";
 import { platformFromUrl } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 
@@ -20,9 +21,11 @@ export interface CoverageLink {
  * WhatsApp broadcast.
  */
 export function PressCoverage({
+  slug,
   film,
   groups,
 }: {
+  slug: string;
   film: string;
   groups: { kind: string; links: CoverageLink[] }[];
 }) {
@@ -97,25 +100,27 @@ export function PressCoverage({
 
                   <div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                     <button
-                      onClick={() =>
+                      onClick={() => {
                         window.open(
                           `https://x.com/intent/tweet?text=${shareText(l)}&url=${encodeURIComponent(l.url)}`,
                           "_blank",
                           "noopener,width=600,height=640",
-                        )
-                      }
+                        );
+                        void recordShare(slug, `coverage:${l.id}:x`);
+                      }}
                       className="rounded-md border border-border px-2 py-1 text-xs text-muted transition-colors hover:border-foreground/30 hover:text-foreground"
                     >
                       X
                     </button>
                     <button
-                      onClick={() =>
+                      onClick={() => {
                         window.open(
                           `https://wa.me/?text=${shareText(l)}%20${encodeURIComponent(l.url)}`,
                           "_blank",
                           "noopener,width=600,height=640",
-                        )
-                      }
+                        );
+                        void recordShare(slug, `coverage:${l.id}:whatsapp`);
+                      }}
                       className="rounded-md border border-border px-2 py-1 text-xs text-muted transition-colors hover:border-foreground/30 hover:text-foreground"
                     >
                       WhatsApp
@@ -123,6 +128,7 @@ export function PressCoverage({
                     <button
                       onClick={async () => {
                         await navigator.clipboard.writeText(l.url);
+                        void recordShare(slug, `coverage:${l.id}:copy`);
                         flash(l.id);
                       }}
                       aria-label="Copy link"

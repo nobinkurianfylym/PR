@@ -3,6 +3,30 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark app shell — the default palette everywhere. */
+  :root {
+    --background: 240 6% 4%;
+    --surface: 240 5% 7%;
+    --raised: 240 5% 10%;
+    --border: 240 5% 16%;
+    --foreground: 0 0% 96%;
+    --muted: 240 4% 60%;
+    --faint: 240 4% 42%;
+  }
+
+  /* Light theme — scoped to the public fan page. Same token names, so every
+     bg-background / text-foreground / border-border utility just flips. */
+  .theme-light {
+    --background: 240 20% 98%;
+    --surface: 0 0% 100%;
+    --raised: 240 24% 95%;
+    --border: 240 13% 87%;
+    --foreground: 240 12% 12%;
+    --muted: 240 6% 38%;
+    --faint: 240 5% 52%;
+    color-scheme: light;
+  }
+
   html {
     color-scheme: dark;
   }

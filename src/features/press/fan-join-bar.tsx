@@ -75,12 +75,12 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
     <>
       {joined ? (
         <div className="inline-flex items-center gap-3 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm">
-          <Star className="h-4 w-4 text-indigo-300" fill="currentColor" strokeWidth={0} />
+          <Star className="h-4 w-4 text-indigo-500" fill="currentColor" strokeWidth={0} />
           <span className="font-medium">
             {joined.name ? `${joined.name}, you're a fan` : "You're a fan"}
           </span>
-          <span className="text-indigo-200">· {joined.points} pts</span>
-          {state?.rank && <span className="text-indigo-200">· Rank #{state.rank}</span>}
+          <span className="text-indigo-700">· {joined.points} pts</span>
+          {state?.rank && <span className="text-indigo-700">· Rank #{state.rank}</span>}
         </div>
       ) : (
         <Button
@@ -112,14 +112,14 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
               <Close className="h-4 w-4" strokeWidth={1.5} />
             </button>
             <div className="bg-gradient-to-br from-indigo-500/15 to-transparent p-6">
-              <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-300">
+              <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-600">
                 <Heart className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} /> Fan Club
               </p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">Join {film}</h2>
               <ul className="mt-4 space-y-2">
                 {PERKS.map((p) => (
                   <li key={p.text} className="flex items-center gap-2.5 text-sm text-muted">
-                    <p.icon className="h-4 w-4 shrink-0 text-indigo-300" strokeWidth={1.5} />
+                    <p.icon className="h-4 w-4 shrink-0 text-indigo-600" strokeWidth={1.5} />
                     {p.text}
                   </li>
                 ))}

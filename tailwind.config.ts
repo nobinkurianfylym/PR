@@ -11,13 +11,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "hsl(240 6% 4%)",
-        surface: "hsl(240 5% 7%)",
-        raised: "hsl(240 5% 10%)",
-        border: "hsl(240 5% 16%)",
-        foreground: "hsl(0 0% 96%)",
-        muted: "hsl(240 4% 60%)",
-        faint: "hsl(240 4% 42%)",
+        // Tokens resolve from CSS variables so a theme can be swapped per
+        // scope (dark app shell, light public fan page) without touching any
+        // utility class. The `<alpha-value>` slot keeps /opacity modifiers.
+        background: "hsl(var(--background) / <alpha-value>)",
+        surface: "hsl(var(--surface) / <alpha-value>)",
+        raised: "hsl(var(--raised) / <alpha-value>)",
+        border: "hsl(var(--border) / <alpha-value>)",
+        foreground: "hsl(var(--foreground) / <alpha-value>)",
+        muted: "hsl(var(--muted) / <alpha-value>)",
+        faint: "hsl(var(--faint) / <alpha-value>)",
       },
       fontFamily: {
         sans: [

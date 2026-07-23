@@ -146,9 +146,10 @@ export default async function PressKitPage(
   }`;
 
   return (
-    <div className="mx-auto min-h-screen max-w-4xl px-6 pb-[45vh] pt-16 md:px-10">
+    <div className="theme-light min-h-screen bg-background text-foreground">
+      <div className="mx-auto max-w-4xl px-6 pb-[45vh] pt-16 md:px-10">
       <header className="border-b border-border pb-10">
-        <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-indigo-300">
+        <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-indigo-600">
           Official Fan Page
         </p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-6xl">
@@ -263,6 +264,7 @@ export default async function PressKitPage(
       <footer className="mt-20 border-t border-border pt-6 text-xs text-faint">
         Press kit powered by PR.FYLYM
       </footer>
+      </div>
     </div>
   );
 }

@@ -19,6 +19,7 @@ import type {
 /** The /api/overview payload — one fetch powers every signed-in page. */
 export interface Overview {
   user: { id: string; name: string; email: string };
+  isMasterAdmin?: boolean;
   film:
     | {
         id: string;

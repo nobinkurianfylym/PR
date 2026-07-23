@@ -10,6 +10,7 @@ import {
   Users,
   FolderLock,
   MessageSquareQuote,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,20 @@ function Frame({ children }: { children: ReactNode }) {
               {label}
             </Link>
           ))}
+          {data?.isMasterAdmin && (
+            <Link
+              href="/admin"
+              className={cn(
+                "mt-4 flex items-center gap-3 rounded-lg border border-blue-500/25 px-3 py-2 text-sm transition-colors",
+                pathname.startsWith("/admin")
+                  ? "bg-raised text-foreground"
+                  : "text-blue-400 hover:bg-raised/60",
+              )}
+            >
+              <ShieldCheck className="h-4 w-4" strokeWidth={1.5} />
+              Master Admin
+            </Link>
+          )}
         </nav>
         <div className="border-t border-border px-3 pt-4">
           <p className="truncate text-[13px] font-medium">{data?.user.name ?? "…"}</p>

@@ -9,6 +9,7 @@ import { groupAssets } from "@/lib/asset-sections";
 import { SubmitForm } from "@/features/press/submit-form";
 import { ShareRow } from "@/features/press/share-row";
 import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
+import { FanClub } from "@/features/press/fan-club";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 
@@ -133,6 +134,7 @@ export default async function PressKitPage(
     ...assetGroups.map((g) => ({ id: g.section.id, label: g.section.label })),
     ...(coverageGroups.length > 0 ? [{ id: "reviews", label: "Reviews" }] : []),
     ...(musicLinks.length > 0 ? [{ id: "music-links", label: "Music" }] : []),
+    { id: "fan-club", label: "Fan Club" },
   ];
 
   const ticketLinks = linksIn(links, "tickets");
@@ -247,6 +249,8 @@ export default async function PressKitPage(
       )}
 
       <ShareRow title={film.title} caption={caption} />
+
+      <FanClub slug={slug} film={film.title} />
 
       {film.submissions_open === 1 && <SubmitForm slug={slug} />}
 

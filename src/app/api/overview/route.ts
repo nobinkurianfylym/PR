@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
 import { activeFilmId } from "@/server/film";
+import { isMasterAdminEmail } from "@/server/master-admin";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { currentPhase, healthScore, aiRecommendations } from "@/server/brain";
 import type { CampaignPhase } from "@/types";
@@ -21,13 +22,13 @@ export async function GET() {
   ).results;
 
   const filmId = await activeFilmId(user.id);
-  if (!filmId) return NextResponse.json({ user, film: null, films: [] });
+  if (!filmId) return NextResponse.json({ user, film: null, films: [], isMasterAdmin: isMasterAdminEmail(user.email) });
 
   const film = await database
     .prepare("SELECT * FROM films WHERE id = ?")
     .bind(filmId)
     .first<Record<string, unknown>>();
-  if (!film) return NextResponse.json({ user, film: null, films });
+  if (!film) return NextResponse.json({ user, film: null, films, isMasterAdmin: isMasterAdminEmail(user.email) });
   const [phases, missions, team, reviews] = await Promise.all([
     database.prepare("SELECT * FROM phases WHERE film_id = ? ORDER BY sort").bind(filmId).all(),
     database.prepare("SELECT * FROM missions WHERE film_id = ? ORDER BY done, rowid").bind(filmId).all(),
@@ -58,6 +59,7 @@ export async function GET() {
 
   return NextResponse.json({
     user,
+    isMasterAdmin: isMasterAdminEmail(user.email),
     films,
     film: { ...film, healthScore: health, phase, daysToRelease },
     phases: phaseRows.map((p) => ({

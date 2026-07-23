@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { api } from "@/hooks/use-overview";
+import { safeNext } from "@/lib/safe-next";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -16,14 +17,18 @@ const schema = z.object({
 });
 type Values = z.infer<typeof schema>;
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  const next = safeNext(params.get("next"), "/dashboard");
   const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(schema) });
+
+  const signInLink = next === "/dashboard" ? "/signup" : `/signup?next=${encodeURIComponent(next)}`;
 
   return (
     <>
@@ -34,7 +39,7 @@ export default function SignInPage() {
         onSubmit={handleSubmit(async (v) => {
           setServerError(null);
           const res = await api.signIn(v.email, v.password);
-          if (res.ok) router.replace("/dashboard");
+          if (res.ok) router.replace(next);
           else setServerError(((await res.json()) as { error?: string }).error ?? "Could not sign in");
         })}
       >
@@ -60,10 +65,18 @@ export default function SignInPage() {
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         New here?{" "}
-        <Link href="/signup" className="text-foreground underline">
+        <Link href={signInLink} className="text-foreground underline">
           Create an account
         </Link>
       </p>
     </>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInForm />
+    </Suspense>
   );
 }

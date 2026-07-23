@@ -15,7 +15,7 @@ export async function GET() {
   // Every campaign the producer owns, for the switcher.
   const films = (
     await database
-      .prepare("SELECT id, title FROM films WHERE user_id = ? ORDER BY created_at DESC, rowid DESC")
+      .prepare("SELECT f.id, f.title FROM films f JOIN film_members m ON m.film_id = f.id WHERE m.user_id = ? ORDER BY f.created_at DESC, f.rowid DESC")
       .bind(user.id)
       .all<{ id: string; title: string }>()
   ).results;

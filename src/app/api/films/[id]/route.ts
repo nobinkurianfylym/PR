@@ -9,7 +9,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const { id } = await ctx.params;
 
   const film = await db()
-    .prepare("SELECT id, release_date FROM films WHERE id = ? AND user_id = ?")
+    .prepare("SELECT f.id, f.release_date FROM films f JOIN film_members m ON m.film_id = f.id WHERE f.id = ? AND m.user_id = ?")
     .bind(id, user.id)
     .first<{ id: string; release_date: string }>();
   if (!film) return NextResponse.json({ error: "Not found" }, { status: 404 });

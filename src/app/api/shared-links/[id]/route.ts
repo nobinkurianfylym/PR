@@ -13,7 +13,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     return NextResponse.json({ error: "Unsupported status" }, { status: 400 });
   }
 
-  const owned = `AND film_id IN (SELECT id FROM films WHERE user_id = ?)`;
+  const owned = `AND film_id IN (SELECT film_id FROM film_members WHERE user_id = ?)`;
   const database = db();
   if (status !== undefined && label !== undefined) {
     await database
@@ -41,7 +41,7 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   await db()
     .prepare(
       `DELETE FROM shared_links WHERE id = ?
-        AND film_id IN (SELECT id FROM films WHERE user_id = ?)`,
+        AND film_id IN (SELECT film_id FROM film_members WHERE user_id = ?)`,
     )
     .bind(id, user.id)
     .run();

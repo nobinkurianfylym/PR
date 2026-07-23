@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const { filmId } = (await req.json()) as { filmId?: string };
   if (!filmId) return NextResponse.json({ error: "filmId required" }, { status: 400 });
   const owned = await db()
-    .prepare("SELECT id FROM films WHERE id = ? AND user_id = ?")
+    .prepare("SELECT film_id AS id FROM film_members WHERE film_id = ? AND user_id = ?")
     .bind(filmId, user.id)
     .first();
   if (!owned) return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
 import { api, useOverview } from "@/hooks/use-overview";
+import { AccessPanel } from "@/features/members/access-panel";
 import type { TeamMember } from "@/types";
 
 const STATUS_TONE: Record<TeamMember["status"], BadgeTone> = {
@@ -45,8 +46,16 @@ export default function TeamPage() {
             The people carrying your film
           </h1>
         </div>
-        <Button onClick={() => setInviting((v) => !v)}>
-          <UserPlus className="h-4 w-4" strokeWidth={1.5} /> Invite
+      </div>
+
+      <AccessPanel />
+
+      <div className="mt-8 flex items-center justify-between">
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
+          Roster
+        </p>
+        <Button variant="outline" size="sm" onClick={() => setInviting((v) => !v)}>
+          <UserPlus className="h-3.5 w-3.5" strokeWidth={1.5} /> Add to roster
         </Button>
       </div>
 

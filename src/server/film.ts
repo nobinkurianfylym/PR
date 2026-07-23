@@ -12,14 +12,17 @@ export async function activeFilmId(userId: string): Promise<string | null> {
   const database = db();
   const chosen = (await cookies()).get(FILM_COOKIE)?.value;
   if (chosen) {
-    const owned = await database
-      .prepare("SELECT id FROM films WHERE id = ? AND user_id = ?")
+    const ok = await database
+      .prepare("SELECT film_id AS id FROM film_members WHERE film_id = ? AND user_id = ?")
       .bind(chosen, userId)
       .first<{ id: string }>();
-    if (owned) return owned.id;
+    if (ok) return ok.id;
   }
   const latest = await database
-    .prepare("SELECT id FROM films WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1")
+    .prepare(
+      `SELECT f.id FROM films f JOIN film_members m ON m.film_id = f.id
+        WHERE m.user_id = ? ORDER BY f.created_at DESC, f.rowid DESC LIMIT 1`,
+    )
     .bind(userId)
     .first<{ id: string }>();
   return latest?.id ?? null;

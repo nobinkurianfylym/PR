@@ -47,7 +47,7 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await ctx.params;
   const asset = await db()
-    .prepare("SELECT a.r2_key FROM assets a JOIN films f ON f.id = a.film_id WHERE a.id = ? AND f.user_id = ?")
+    .prepare("SELECT a.r2_key FROM assets a JOIN film_members m ON m.film_id = a.film_id WHERE a.id = ? AND m.user_id = ?")
     .bind(id, user.id)
     .first<{ r2_key: string }>();
   if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -68,7 +68,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   await db()
     .prepare(
       `UPDATE assets SET status = 'approved' WHERE id = ?
-       AND film_id IN (SELECT id FROM films WHERE user_id = ?)`,
+       AND film_id IN (SELECT film_id FROM film_members WHERE user_id = ?)`,
     )
     .bind(id, user.id)
     .run();

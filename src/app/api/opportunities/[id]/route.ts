@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
 
-const owned = "AND film_id IN (SELECT id FROM films WHERE user_id = ?)";
+const owned = "AND film_id IN (SELECT film_id FROM film_members WHERE user_id = ?)";
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await currentUser();

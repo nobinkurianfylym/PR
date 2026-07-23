@@ -3,6 +3,7 @@ import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
 import { setActiveFilm } from "@/server/film";
 import { uniqueSlug } from "@/server/slug";
+import { addMember } from "@/server/membership";
 import { planCampaign, seedMissions } from "@/server/brain";
 
 /** All the producer's campaigns, newest first. */
@@ -10,7 +11,7 @@ export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { results } = await db()
-    .prepare("SELECT id, title, release_date FROM films WHERE user_id = ? ORDER BY created_at DESC, rowid DESC")
+    .prepare("SELECT f.id, f.title, f.release_date FROM films f JOIN film_members m ON m.film_id = f.id WHERE m.user_id = ? ORDER BY f.created_at DESC, f.rowid DESC")
     .bind(user.id)
     .all();
   return NextResponse.json({ films: results });
@@ -42,6 +43,8 @@ export async function POST(req: Request) {
       String(b.cast ?? ""), String(b.crew ?? ""), await uniqueSlug(title),
     )
     .run();
+
+  await addMember(filmId, user.id, "admin");
 
   // The Brain plans the campaign and seeds the first missions.
   const statements = planCampaign(releaseDate).map((p) =>

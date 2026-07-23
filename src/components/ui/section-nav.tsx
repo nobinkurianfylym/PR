@@ -11,8 +11,11 @@ import { cn } from "@/lib/utils";
  */
 export function SectionNav({
   sections,
+  accent = false,
 }: {
   sections: { id: string; label: string }[];
+  /** Indigo, attention-drawing treatment — used on the public fan page. */
+  accent?: boolean;
 }) {
   const [active, setActive] = useState<string | null>(sections[0]?.id ?? null);
 
@@ -58,18 +61,27 @@ export function SectionNav({
   return (
     <nav
       aria-label="Sections"
-      className="sticky top-0 z-20 -mx-6 mb-8 border-b border-border bg-background/85 px-6 backdrop-blur md:-mx-10 md:px-10"
+      className={cn(
+        "sticky top-0 z-20 -mx-6 mb-8 border-b px-6 backdrop-blur md:-mx-10 md:px-10",
+        accent
+          ? "border-indigo-500/25 bg-gradient-to-r from-indigo-500/15 via-indigo-500/10 to-transparent"
+          : "border-border bg-background/85",
+      )}
     >
-      <ul className="flex gap-1 overflow-x-auto py-3">
+      <ul className="flex gap-1.5 overflow-x-auto py-3">
         {sections.map((s) => (
           <li key={s.id}>
             <a
               href={`#${s.id}`}
               className={cn(
-                "block whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] transition-colors",
-                active === s.id
-                  ? "bg-raised text-foreground"
-                  : "text-muted hover:text-foreground",
+                "block whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all",
+                accent
+                  ? active === s.id
+                    ? "bg-indigo-500 text-white shadow-sm shadow-indigo-500/30"
+                    : "text-indigo-700/70 hover:bg-indigo-500/10 hover:text-indigo-700"
+                  : active === s.id
+                    ? "bg-raised text-foreground"
+                    : "text-muted hover:text-foreground",
               )}
             >
               {s.label}

@@ -221,7 +221,7 @@ export default async function PressKitPage(
         )}
       </header>
 
-      <SectionNav sections={navSections} />
+      <SectionNav sections={navSections} accent />
 
       {assets.length === 0 ? (
         <p className="py-20 text-center text-sm text-faint">

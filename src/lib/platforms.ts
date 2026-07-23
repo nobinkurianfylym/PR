@@ -38,6 +38,7 @@ export function platformsIn(group: LinkGroup): Platform[] {
 export interface FilmLink {
   platform: string;
   url: string;
+  image?: string;
 }
 
 /** What a link shared with the production team is. */
@@ -53,6 +54,7 @@ export interface ResolvedLink {
   id: string;
   label: string;
   url: string;
+  image: string;
 }
 
 /** Links of one or more groups, in catalogue order, ready to render. */
@@ -60,7 +62,7 @@ export function linksIn(links: FilmLink[], ...groups: LinkGroup[]): ResolvedLink
   return PLATFORMS.filter((p) => groups.includes(p.group))
     .map((p) => {
       const hit = links.find((l) => l.platform === p.id);
-      return hit ? { id: p.id, label: p.label, url: hit.url } : null;
+      return hit ? { id: p.id, label: p.label, url: hit.url, image: hit.image ?? "" } : null;
     })
     .filter((x): x is ResolvedLink => x !== null);
 }

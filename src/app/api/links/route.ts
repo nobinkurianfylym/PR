@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
 import { activeFilmId } from "@/server/film";
-import { PLATFORM_BY_ID } from "@/lib/platforms";
+import { PLATFORM_BY_ID, platformsIn } from "@/lib/platforms";
+import { resolvePreviewImage } from "@/server/preview-image";
+
+// Music links get an album-art thumbnail on the press kit, so we resolve
+// their og:image on save. Everything else keeps text-only chips.
+const MUSIC_PLATFORMS = new Set(platformsIn("music").map((p) => p.id));
 
 export async function GET() {
   const user = await currentUser();
@@ -42,15 +47,32 @@ export async function PUT(req: Request) {
   }
 
   const database = db();
+
+  // Reuse an existing thumbnail when a music link's URL is unchanged; only
+  // fetch og:image for new or changed music links.
+  const existing = await database
+    .prepare("SELECT platform, url, image FROM film_links WHERE film_id = ?")
+    .bind(filmId)
+    .all<{ platform: string; url: string; image: string }>();
+  const prior = new Map(existing.results.map((r) => [`${r.platform}|${r.url}`, r.image]));
+
+  const withImages = await Promise.all(
+    clean.map(async (l) => {
+      if (!MUSIC_PLATFORMS.has(l.platform)) return { ...l, image: "" };
+      const cached = prior.get(`${l.platform}|${l.url}`);
+      return { ...l, image: cached || (await resolvePreviewImage(l.url)) };
+    }),
+  );
+
   await database.prepare("DELETE FROM film_links WHERE film_id = ?").bind(filmId).run();
-  if (clean.length > 0) {
+  if (withImages.length > 0) {
     await database.batch(
-      clean.map((l) =>
+      withImages.map((l) =>
         database
-          .prepare("INSERT INTO film_links (id, film_id, platform, url) VALUES (?,?,?,?)")
-          .bind(crypto.randomUUID(), filmId, l.platform, l.url),
+          .prepare("INSERT INTO film_links (id, film_id, platform, url, image) VALUES (?,?,?,?,?)")
+          .bind(crypto.randomUUID(), filmId, l.platform, l.url, l.image),
       ),
     );
   }
-  return NextResponse.json({ ok: true, count: clean.length });
+  return NextResponse.json({ ok: true, count: withImages.length });
 }

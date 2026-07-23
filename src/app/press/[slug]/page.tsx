@@ -38,7 +38,7 @@ async function getFilm(slug: string): Promise<FilmRow | null> {
 
 async function getLinks(filmId: string): Promise<FilmLink[]> {
   const { results } = await db()
-    .prepare("SELECT platform, url FROM film_links WHERE film_id = ?")
+    .prepare("SELECT platform, url, image FROM film_links WHERE film_id = ?")
     .bind(filmId)
     .all<FilmLink>();
   return results;
@@ -251,17 +251,34 @@ export default async function PressKitPage(
       {musicLinks.length > 0 && (
         <section id="music-links" className="mt-14 scroll-mt-24">
           <SectionHeading id="music-links-h" title="Music" count={musicLinks.length} />
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {musicLinks.map((l) => (
               <a
                 key={l.url}
                 href={l.url}
                 target="_blank"
                 rel="noopener"
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] text-muted transition-colors hover:border-foreground/30 hover:text-foreground"
+                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-foreground/25"
               >
-                <PlatformLogo platform={l.id} />
-                {l.label}
+                <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-raised">
+                  {l.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={l.image}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    />
+                  ) : (
+                    <PlatformLogo platform={l.id} className="h-8 w-8 text-faint" />
+                  )}
+                  <span className="absolute bottom-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-md bg-black/55 backdrop-blur-sm">
+                    <PlatformLogo platform={l.id} className="h-3.5 w-3.5 text-white" />
+                  </span>
+                </div>
+                <span className="px-3 py-2.5 text-[13px] font-medium text-muted transition-colors group-hover:text-foreground">
+                  {l.label}
+                </span>
               </a>
             ))}
           </div>

@@ -265,12 +265,12 @@ export default async function PressKitPage(
         <p className="font-medium text-foreground">
           Build your movie&rsquo;s fan universe.{" "}
           <a
-            href="https://www.pr.fylym.com"
+            href="https://pr.fylym.com/"
             target="_blank"
             rel="noopener"
             className="text-indigo-600 underline-offset-2 hover:underline"
           >
-            www.pr.fylym.com
+            pr.fylym.com
           </a>
         </p>
         <p className="mt-1.5 text-xs text-faint">

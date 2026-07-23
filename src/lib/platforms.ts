@@ -3,7 +3,7 @@
  * here is the only change needed — the editor, the press kit, and the API
  * all read this list.
  */
-export type LinkGroup = "official" | "social" | "tickets" | "music";
+export type LinkGroup = "official" | "social" | "tickets" | "music" | "community";
 
 export interface Platform {
   id: string;
@@ -25,6 +25,8 @@ export const PLATFORMS: Platform[] = [
   { id: "spotify", label: "Spotify", group: "music", placeholder: "https://open.spotify.com/album/…" },
   { id: "applemusic", label: "Apple Music", group: "music", placeholder: "https://music.apple.com/…" },
   { id: "youtubemusic", label: "YouTube Music", group: "music", placeholder: "https://music.youtube.com/…" },
+  { id: "whatsapp", label: "WhatsApp community", group: "community", placeholder: "https://chat.whatsapp.com/…" },
+  { id: "telegram", label: "Telegram community", group: "community", placeholder: "https://t.me/…" },
 ];
 
 export const PLATFORM_BY_ID = new Map(PLATFORMS.map((p) => [p.id, p]));

@@ -11,6 +11,7 @@ import { ShareMenu } from "@/features/press/share-menu";
 import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
 import { FanJoinBar } from "@/features/press/fan-join-bar";
 import { FanLeaderboard } from "@/features/press/fan-leaderboard";
+import { FanBoard } from "@/features/press/fan-board";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 
@@ -136,11 +137,15 @@ export default async function PressKitPage(
     ...(coverageGroups.length > 0 ? [{ id: "reviews", label: "Reviews" }] : []),
     ...(musicLinks.length > 0 ? [{ id: "music-links", label: "Music" }] : []),
     { id: "fan-club", label: "Fan Club" },
+    { id: "fan-wall", label: "Discussion" },
   ];
 
   const ticketLinks = linksIn(links, "tickets");
   // Everything else rides in one row under the tickets button.
   const pageLinks = linksIn(links, "official", "social");
+  const communityLinks = linksIn(links, "community");
+  const whatsappUrl = communityLinks.find((l) => l.id === "whatsapp")?.url;
+  const telegramUrl = communityLinks.find((l) => l.id === "telegram")?.url;
   const caption = `LOVE ${film.title}? JOIN THE FAN CLUB${
     film.release_date ? ` — in cinemas ${fmtDate(film.release_date)}.` : "."
   }`;
@@ -264,6 +269,8 @@ export default async function PressKitPage(
       )}
 
       <FanLeaderboard slug={slug} />
+
+      <FanBoard slug={slug} whatsapp={whatsappUrl} telegram={telegramUrl} />
 
       <footer className="mt-20 border-t border-border pt-8 text-sm">
         <p className="font-medium text-foreground">

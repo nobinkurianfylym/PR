@@ -11,9 +11,10 @@ const GROUP_LABEL: Record<LinkGroup, string> = {
   social: "Social",
   tickets: "Tickets",
   music: "Music",
+  community: "Community (fan chat groups)",
 };
 
-const GROUP_ORDER: LinkGroup[] = ["official", "social", "tickets", "music"];
+const GROUP_ORDER: LinkGroup[] = ["official", "social", "tickets", "music", "community"];
 
 /**
  * Official pages for the campaign. One field per platform — fill what you

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, Mail, Send, Users } from "lucide-react";
+import { Download, Mail, Send, ShieldCheck, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
@@ -13,6 +13,10 @@ interface FanStats {
   perFilm: { film_id: string; title: string; fans: number }[];
   recent: { name: string; email: string; city: string; created_at: string; film: string }[];
 }
+interface AdminUser {
+  id: string; email: string; name: string; created_at: string;
+  films: number; owned: number; isAdmin: boolean;
+}
 interface Broadcast {
   id: string; scope: string; subject: string;
   recipient_count: number; sent_count: number; status: string; created_at: string;
@@ -22,6 +26,8 @@ export default function AdminPage() {
   const { data } = useOverview();
   const [stats, setStats] = useState<FanStats | null>(null);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [selfId, setSelfId] = useState("");
   const [emailReady, setEmailReady] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
@@ -41,8 +47,29 @@ export default function AdminPage() {
       setBroadcasts(d.broadcasts);
       setEmailReady(d.emailConfigured);
     }
+    const uRes = await fetch("/api/admin/users", { cache: "no-store" });
+    if (uRes.ok) {
+      const d = (await uRes.json()) as { users: AdminUser[]; self: string };
+      setUsers(d.users);
+      setSelfId(d.self);
+    }
   }, []);
   useEffect(() => { void load(); }, [load]);
+
+  async function deleteUser(u: AdminUser) {
+    const warn =
+      u.owned > 0
+        ? `Delete ${u.email}?\n\nThis permanently deletes the ${u.owned} campaign${u.owned > 1 ? "s" : ""} they own — every asset, fan and message. This cannot be undone.`
+        : `Delete ${u.email}? This removes their login and access.`;
+    if (!confirm(warn)) return;
+    const res = await fetch(`/api/admin/users/${u.id}`, { method: "DELETE" });
+    if (res.status === 204) {
+      setUsers((us) => us.filter((x) => x.id !== u.id));
+      await load();
+    } else {
+      alert(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Couldn't delete.");
+    }
+  }
 
   // Client guard mirrors the server one; the API is the real gate.
   if (forbidden || (data && data.isMasterAdmin === false)) {
@@ -85,11 +112,52 @@ export default function AdminPage() {
         <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-faint">
           PR.FYLYM · Master Admin
         </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Fan database</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Site administration</h1>
         <p className="mt-1 text-sm text-muted">
-          Everyone who joined a fan club, across every campaign on the platform.
+          Every login, every fan, and messaging — across all campaigns on the platform.
         </p>
       </header>
+
+      <Card>
+        <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
+          <Users className="h-3.5 w-3.5" strokeWidth={1.5} /> All logins ({users.length})
+        </p>
+        {users.length === 0 ? (
+          <p className="mt-3 text-sm text-faint">No accounts yet.</p>
+        ) : (
+          <div className="mt-3 divide-y divide-border">
+            {users.map((u) => (
+              <div key={u.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5 text-[13px]">
+                <span className="flex min-w-0 flex-1 items-center gap-1.5 font-medium">
+                  <span className="truncate">{u.name || u.email}</span>
+                  {u.isAdmin && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-900 px-1.5 py-0.5 text-[10px] text-emerald-400">
+                      <ShieldCheck className="h-3 w-3" strokeWidth={1.5} /> Admin
+                    </span>
+                  )}
+                  {u.id === selfId && !u.isAdmin && <span className="shrink-0 text-[10px] text-faint">you</span>}
+                </span>
+                <span className="truncate text-faint">{u.email}</span>
+                <span className="shrink-0 text-faint" title="Campaigns owned · memberships">
+                  {u.owned} owned · {u.films} on
+                </span>
+                <span className="shrink-0 text-faint">{formatDate(u.created_at.slice(0, 10))}</span>
+                {u.isAdmin || u.id === selfId ? (
+                  <span className="w-7 shrink-0 text-center text-faint">—</span>
+                ) : (
+                  <button
+                    onClick={() => void deleteUser(u)}
+                    aria-label={`Delete ${u.email}`}
+                    className="shrink-0 rounded-md p-1 text-faint transition-colors hover:bg-raised hover:text-red-500"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>

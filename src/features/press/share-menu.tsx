@@ -58,13 +58,14 @@ export function ShareMenu({ slug, caption }: { slug: string; caption: string }) 
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Share this page"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-[13px] font-medium text-muted transition-colors hover:border-indigo-500/40 hover:text-indigo-600"
       >
         {copied ? (
           <Check className="h-4 w-4 text-emerald-500" strokeWidth={2} />
         ) : (
           <Share2 className="h-4 w-4" strokeWidth={1.5} />
         )}
+        {copied ? "Copied" : "Share"}
       </button>
 
       {open && (

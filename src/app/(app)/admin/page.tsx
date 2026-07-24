@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, Mail, Send, ShieldCheck, Trash2, Users } from "lucide-react";
+import { Clapperboard, Download, ExternalLink, Mail, Send, ShieldCheck, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
@@ -17,6 +17,12 @@ interface AdminUser {
   id: string; email: string; name: string; created_at: string;
   films: number; owned: number; isAdmin: boolean;
 }
+interface AdminProject {
+  id: string; title: string; slug: string; published: number;
+  created_at: string; release_date: string;
+  owner_email: string | null; owner_name: string | null;
+  fans: number; assets: number; team: number;
+}
 interface Broadcast {
   id: string; scope: string; subject: string;
   recipient_count: number; sent_count: number; status: string; created_at: string;
@@ -27,6 +33,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<FanStats | null>(null);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [projects, setProjects] = useState<AdminProject[]>([]);
   const [selfId, setSelfId] = useState("");
   const [emailReady, setEmailReady] = useState(false);
   const [forbidden, setForbidden] = useState(false);
@@ -53,6 +60,8 @@ export default function AdminPage() {
       setUsers(d.users);
       setSelfId(d.self);
     }
+    const pRes = await fetch("/api/admin/projects", { cache: "no-store" });
+    if (pRes.ok) setProjects(((await pRes.json()) as { projects: AdminProject[] }).projects);
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -153,6 +162,44 @@ export default function AdminPage() {
                     <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </button>
                 )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
+          <Clapperboard className="h-3.5 w-3.5" strokeWidth={1.5} /> All projects ({projects.length})
+        </p>
+        {projects.length === 0 ? (
+          <p className="mt-3 text-sm text-faint">No campaigns yet.</p>
+        ) : (
+          <div className="mt-3 divide-y divide-border">
+            {projects.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5 text-[13px]">
+                <span className="flex min-w-0 flex-1 items-center gap-1.5 font-medium">
+                  <span className="truncate">{p.title}</span>
+                  {p.published === 1 ? (
+                    <a
+                      href={`/press/${p.slug}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-900 px-1.5 py-0.5 text-[10px] text-emerald-400 hover:text-emerald-300"
+                    >
+                      Live <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
+                    </a>
+                  ) : (
+                    <span className="shrink-0 rounded-full border border-border px-1.5 py-0.5 text-[10px] text-faint">Draft</span>
+                  )}
+                </span>
+                <span className="min-w-0 shrink-0 text-faint" title="Started by">
+                  by {p.owner_name || p.owner_email || "unknown"}
+                </span>
+                <span className="shrink-0 tabular-nums text-faint" title="Fans · assets · team">
+                  {p.fans}★ · {p.assets} files · {p.team} team
+                </span>
+                <span className="shrink-0 text-faint">{formatDate(p.created_at.slice(0, 10))}</span>
               </div>
             ))}
           </div>

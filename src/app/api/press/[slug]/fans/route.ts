@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { award, currentFan, fanRank, setFanCookie } from "@/server/fan";
+import { clientIp, rateLimit } from "@/server/rate-limit";
 
 /**
  * Public fan-club sign-up. No account — anyone joins with an email. Idempotent
@@ -17,6 +18,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
     .bind(slug)
     .first<{ id: string }>();
   if (!film) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Cap mass fake joins from one source (email-only sign-up, so this is the
+  // main brake on leaderboard/DB spam).
+  if (!(await rateLimit(`fanjoin:ip:${await clientIp()}`, 12, 3600))) {
+    return NextResponse.json({ error: "Too many sign-ups. Try again later." }, { status: 429 });
+  }
 
   const b = (await req.json()) as { name?: string; email?: string; city?: string };
   const email = String(b.email ?? "").trim().toLowerCase();

@@ -4,6 +4,7 @@ import { currentUser } from "@/server/auth";
 import { activeFilmId } from "@/server/film";
 import { firecrawlSearch } from "@/server/firecrawl";
 import { platformFromUrl } from "@/lib/platforms";
+import { rateLimit } from "@/server/rate-limit";
 
 /**
  * Crawl the web for real coverage of the active film and drop it into the
@@ -36,6 +37,11 @@ export async function POST() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const filmId = await activeFilmId(user.id);
   if (!filmId) return NextResponse.json({ error: "No campaign selected" }, { status: 400 });
+
+  // Cap paid crawls per film so a stuck button can't drain Firecrawl credits.
+  if (!(await rateLimit(`crawl:${filmId}`, 12, 3600))) {
+    return NextResponse.json({ error: "Crawl limit reached for now. Try again later." }, { status: 429 });
+  }
 
   const film = await db()
     .prepare("SELECT title, language, release_date FROM films WHERE id = ?")

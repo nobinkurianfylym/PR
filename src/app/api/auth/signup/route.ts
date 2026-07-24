@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { createSession, hashPassword } from "@/server/auth";
+import { clientIp, rateLimit } from "@/server/rate-limit";
 
 export async function POST(req: Request) {
   const { name, email, password } = (await req.json()) as {
@@ -8,6 +9,9 @@ export async function POST(req: Request) {
   };
   if (!name || !email || !password || password.length < 8) {
     return NextResponse.json({ error: "Invalid signup details" }, { status: 400 });
+  }
+  if (!(await rateLimit(`signup:ip:${await clientIp()}`, 5, 3600))) {
+    return NextResponse.json({ error: "Too many sign-ups from here. Try again later." }, { status: 429 });
   }
   const normalized = email.toLowerCase();
   const existing = await db().prepare("SELECT id FROM users WHERE email = ?").bind(normalized).first();

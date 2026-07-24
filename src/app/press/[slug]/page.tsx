@@ -241,6 +241,7 @@ export default async function FanPage(
                 </a>
               ))}
               <ShareMenu slug={slug} caption={caption} />
+              {film.submissions_open === 1 && <SubmitForm slug={slug} />}
             </div>
           </div>
 
@@ -378,12 +379,6 @@ export default async function FanPage(
             Join the conversation <ArrowRight className="h-4 w-4" strokeWidth={2} />
           </a>
         </section>
-
-        {film.submissions_open === 1 && (
-          <div className="mt-14">
-            <SubmitForm slug={slug} />
-          </div>
-        )}
 
         <FanLeaderboard slug={slug} />
 

@@ -64,7 +64,7 @@ export function SectionNav({
       className={cn(
         "sticky top-0 z-20 -mx-6 mb-8 border-b px-6 backdrop-blur md:-mx-10 md:px-10",
         accent
-          ? "border-indigo-500/25 bg-gradient-to-r from-indigo-500/15 via-indigo-500/10 to-transparent"
+          ? "border-gold/25 bg-gradient-to-r from-gold/15 via-gold/10 to-transparent"
           : "border-border bg-background/85",
       )}
     >
@@ -77,8 +77,8 @@ export function SectionNav({
                 "block whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all",
                 accent
                   ? active === s.id
-                    ? "bg-indigo-500 text-white shadow-sm shadow-indigo-500/30"
-                    : "text-indigo-700/70 hover:bg-indigo-500/10 hover:text-indigo-700"
+                    ? "bg-gold text-white shadow-sm shadow-gold/30"
+                    : "text-gold-deep/70 hover:bg-gold/10 hover:text-gold-deep"
                   : active === s.id
                     ? "bg-raised text-foreground"
                     : "text-muted hover:text-foreground",

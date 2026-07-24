@@ -74,19 +74,19 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
   return (
     <>
       {joined ? (
-        <div className="inline-flex items-center gap-3 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm">
-          <Star className="h-4 w-4 text-indigo-500" fill="currentColor" strokeWidth={0} />
+        <div className="inline-flex items-center gap-3 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm">
+          <Star className="h-4 w-4 text-gold" fill="currentColor" strokeWidth={0} />
           <span className="font-medium">
             {joined.name ? `${joined.name}, you're a fan` : "You're a fan"}
           </span>
-          <span className="text-indigo-700">· {joined.points} pts</span>
-          {state?.rank && <span className="text-indigo-700">· Rank #{state.rank}</span>}
+          <span className="text-gold-deep">· {joined.points} pts</span>
+          {state?.rank && <span className="text-gold-deep">· Rank #{state.rank}</span>}
         </div>
       ) : (
         <Button
           size="lg"
           onClick={() => setOpen(true)}
-          className="bg-indigo-500 text-white hover:bg-indigo-400"
+          className="bg-gold text-white hover:bg-gold-soft"
         >
           <Heart className="h-4 w-4" fill="currentColor" strokeWidth={0} /> Join the Fan Club
         </Button>
@@ -102,7 +102,7 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-indigo-500/25 bg-surface"
+            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-gold/25 bg-surface"
           >
             <button
               onClick={() => setOpen(false)}
@@ -111,15 +111,15 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
             >
               <Close className="h-4 w-4" strokeWidth={1.5} />
             </button>
-            <div className="bg-gradient-to-br from-indigo-500/15 to-transparent p-6">
-              <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-600">
+            <div className="bg-gradient-to-br from-gold/15 to-transparent p-6">
+              <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-gold-deep">
                 <Heart className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} /> Fan Club
               </p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">Join {film}</h2>
               <ul className="mt-4 space-y-2">
                 {PERKS.map((p) => (
                   <li key={p.text} className="flex items-center gap-2.5 text-sm text-muted">
-                    <p.icon className="h-4 w-4 shrink-0 text-indigo-600" strokeWidth={1.5} />
+                    <p.icon className="h-4 w-4 shrink-0 text-gold-deep" strokeWidth={1.5} />
                     {p.text}
                   </li>
                 ))}
@@ -139,7 +139,7 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
                 <Input id="fj-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
               </Field>
               {error && <p className="text-sm text-red-400">{error}</p>}
-              <Button type="submit" disabled={sending} className="w-full bg-indigo-500 text-white hover:bg-indigo-400">
+              <Button type="submit" disabled={sending} className="w-full bg-gold text-white hover:bg-gold-soft">
                 {sending ? "Joining…" : "Join & get 20 points"}
               </Button>
               <p className="text-center text-[11px] text-faint">Free. Unsubscribe anytime.</p>

@@ -62,19 +62,19 @@ export function FanLeaderboard({ slug }: { slug: string }) {
       ) : (
         <div className="mt-5 space-y-4">
           {biggest && (
-            <div className="flex items-center gap-4 overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/15 to-transparent p-5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-500/20">
+            <div className="flex items-center gap-4 overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/15 to-transparent p-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gold/20">
                 <Crown className="h-6 w-6 text-amber-500" strokeWidth={1.5} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-indigo-600">
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gold-deep">
                   Biggest fan
                 </p>
                 <p className="truncate text-lg font-semibold">{biggest.name || "Anonymous fan"}</p>
                 {biggest.city && <p className="text-xs text-faint">{biggest.city}</p>}
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-2xl font-semibold tabular-nums text-indigo-700">{biggest.points}</p>
+                <p className="text-2xl font-semibold tabular-nums text-gold-deep">{biggest.points}</p>
                 <p className="text-[11px] text-faint">points</p>
               </div>
             </div>

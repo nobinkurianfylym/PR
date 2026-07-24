@@ -149,7 +149,7 @@ export function FanBoard({
             <button
               type="submit"
               disabled={sending || !body.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gold-soft disabled:opacity-50"
             >
               <Send className="h-3.5 w-3.5" strokeWidth={1.5} /> {sending ? "Posting…" : "Post"}
             </button>
@@ -166,7 +166,7 @@ export function FanBoard({
         <ul className="mt-6 space-y-3">
           {state.posts.map((p) => (
             <li key={p.id} className="group flex gap-3 rounded-xl border border-border bg-surface px-4 py-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-500/15 text-sm font-semibold text-indigo-600">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/15 text-sm font-semibold text-gold-deep">
                 {(p.name || "F").trim().charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">

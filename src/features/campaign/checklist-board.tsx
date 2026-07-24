@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, Download, Loader2, Paperclip, Upload, X } from "lucide-react";
+import { Check, ChevronDown, Download, Loader2, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CHECKLIST, CHECKLIST_TOTAL } from "@/lib/checklist";
 

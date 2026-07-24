@@ -21,6 +21,14 @@ const config: Config = {
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         muted: "hsl(var(--muted) / <alpha-value>)",
         faint: "hsl(var(--faint) / <alpha-value>)",
+        // Warm brass accent for the public fan page.
+        gold: {
+          DEFAULT: "#b78a34",
+          soft: "#c9a24e",
+          deep: "#8a6620",
+        },
+        // Deep espresso panels on the fan page (dark blocks over cream).
+        espresso: "#241d13",
       },
       fontFamily: {
         sans: [

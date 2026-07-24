@@ -14,16 +14,17 @@
     --faint: 240 4% 42%;
   }
 
-  /* Light theme — scoped to the public fan page. Same token names, so every
-     bg-background / text-foreground / border-border utility just flips. */
-  .theme-light {
-    --background: 240 20% 98%;
-    --surface: 0 0% 100%;
-    --raised: 240 24% 95%;
-    --border: 240 13% 87%;
-    --foreground: 240 12% 12%;
-    --muted: 240 6% 38%;
-    --faint: 240 5% 52%;
+  /* Warm cinematic theme — scoped to the public fan page. Cream paper, deep
+     espresso text, brass accents. Same token names, so every
+     bg-background / text-foreground / border-border utility just re-tones. */
+  .theme-fan {
+    --background: 42 34% 92%;
+    --surface: 44 42% 96%;
+    --raised: 40 28% 88%;
+    --border: 38 20% 81%;
+    --foreground: 28 30% 14%;
+    --muted: 30 14% 34%;
+    --faint: 33 12% 48%;
     color-scheme: light;
   }
 

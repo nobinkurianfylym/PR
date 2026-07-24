@@ -18,6 +18,7 @@
     "framer-motion": "^11.15.0",
     "lucide-react": "^0.469.0",
     "next": "^15.1.4",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
@@ -27,7 +28,9 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
+    "@opennextjs/cloudflare": "^1.20.1",
     "@types/node": "^22.10.0",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
@@ -36,7 +39,6 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.0",
-    "@opennextjs/cloudflare": "^1.20.1",
     "wrangler": "^4.110.0"
   }
 }

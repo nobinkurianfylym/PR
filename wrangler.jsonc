@@ -11,6 +11,10 @@
 	"r2_buckets": [
 		{ "binding": "BUCKET", "bucket_name": "pr-fylym-assets" }
 	],
+	// Cloudflare Images transformations — used to letterbox a poster into a
+	// 1.91:1 share card off the Worker CPU. Falls back to the raw file if the
+	// account doesn't have transformations enabled.
+	"images": { "binding": "IMAGES" },
 	"d1_databases": [
 		{
 			"binding": "DB",

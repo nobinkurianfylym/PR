@@ -56,9 +56,14 @@ export async function generateMetadata(
   const base = await origin();
   const title = `${a.film_title} — ${a.type}`;
   const description = `Official ${a.type.toLowerCase()} from the ${a.film_title} press kit. Free to download for press and partners.`;
-  const images = a.content_type.startsWith("image/") ? [`${base}/api/assets/${a.id}`] : undefined;
+  // A 1.91:1 card that letterboxes the full poster, so it is never cropped in
+  // the shared post. Non-images have no card and fall back to a text preview.
+  const images = a.content_type.startsWith("image/")
+    ? [{ url: `${base}/api/assets/${a.id}/card`, width: 1200, height: 630 }]
+    : undefined;
 
   return {
+    metadataBase: new URL(base),
     title,
     description,
     openGraph: {

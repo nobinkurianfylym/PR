@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Trash2 } from "lucide-react";
+import { ArrowUpRight, Globe, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/hooks/use-overview";
@@ -28,6 +28,8 @@ export function SharedLinksInbox() {
   const router = useRouter();
   const [links, setLinks] = useState<SharedLink[] | null>(null);
   const [labels, setLabels] = useState<Record<string, string>>({});
+  const [crawling, setCrawling] = useState(false);
+  const [crawlMsg, setCrawlMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/shared-links", { cache: "no-store" });
@@ -60,9 +62,29 @@ export function SharedLinksInbox() {
     await load();
   }
 
-  if (!links || links.length === 0) return null;
-  const pending = links.filter((l) => l.status !== "approved");
-  const published = links.filter((l) => l.status === "approved");
+  // Crawl the web for this film's coverage and drop it into the queue below.
+  async function crawl() {
+    setCrawling(true);
+    setCrawlMsg(null);
+    const res = await fetch("/api/shared-links/crawl", { method: "POST" });
+    if (res.ok) {
+      const { found, added } = (await res.json()) as { found: number; added: number };
+      setCrawlMsg(
+        added > 0
+          ? `Found ${found} results — added ${added} new to review below.`
+          : `Found ${found} results — nothing new to add.`,
+      );
+      await load();
+    } else {
+      const { error } = (await res.json().catch(() => ({}))) as { error?: string };
+      setCrawlMsg(error ?? "Crawl failed.");
+    }
+    setCrawling(false);
+  }
+
+  const pending = (links ?? []).filter((l) => l.status !== "approved");
+  const published = (links ?? []).filter((l) => l.status === "approved");
+  const empty = links !== null && pending.length === 0 && published.length === 0;
 
   const meta = (l: SharedLink) => (
     <p className="mt-0.5 text-xs text-faint">
@@ -85,16 +107,37 @@ export function SharedLinksInbox() {
 
   return (
     <section className="mt-8">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-sm font-medium">Links shared with the team</h2>
-        <span className="text-xs text-faint">
-          {pending.length} to review · {published.length} published
-        </span>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-medium">Reviews &amp; coverage</h2>
+          <p className="mt-1 max-w-md text-[13px] text-faint">
+            Reviews, articles and video coverage — sent from your press kit or
+            found on the web. Approve one to list it publicly.
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <Button variant="outline" size="sm" onClick={() => void crawl()} disabled={crawling}>
+            {crawling ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+            )}
+            {crawling ? "Crawling the web…" : "Crawl the web for reviews"}
+          </Button>
+          <span className="text-[11px] text-faint">
+            {pending.length} to review · {published.length} published
+          </span>
+        </div>
       </div>
-      <p className="mt-1 text-[13px] text-faint">
-        Reviews, social posts, and coverage sent from your public press kit.
-        Approve one to list it publicly for fans and press to amplify.
-      </p>
+
+      {crawlMsg && <p className="mt-2 text-[13px] text-muted">{crawlMsg}</p>}
+
+      {empty && (
+        <p className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-center text-[13px] text-faint">
+          No coverage yet — crawl the web for this film&rsquo;s reviews, or wait
+          for public submissions.
+        </p>
+      )}
 
       {pending.length > 0 && (
         <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-surface">

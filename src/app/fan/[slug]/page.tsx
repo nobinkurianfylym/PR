@@ -114,7 +114,7 @@ export default async function FanPage(
     getLinks(film.id),
     db()
       .prepare(
-        `SELECT id, url, kind, label, image FROM shared_links
+        `SELECT id, url, kind, label, image, note FROM shared_links
           WHERE film_id = ? AND status = 'approved'
           ORDER BY created_at DESC, rowid DESC`,
       )
@@ -337,10 +337,8 @@ export default async function FanPage(
           </section>
         )}
 
-        {coverageGroups.length > 0 && (
-          <div id="reviews" className="scroll-mt-20">
-            <PressCoverage slug={slug} film={film.title} groups={coverageGroups} />
-          </div>
+        {coverage.length > 0 && (
+          <PressCoverage slug={slug} film={film.title} links={coverage} />
         )}
 
         {musicLinks.length > 0 && (

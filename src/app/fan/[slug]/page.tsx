@@ -14,6 +14,7 @@ import { FanLeaderboard } from "@/features/press/fan-leaderboard";
 import { FanBoard } from "@/features/press/fan-board";
 import { ReferralCapture } from "@/features/press/referral-capture";
 import { ScanToJoin } from "@/features/press/scan-to-join";
+import { subdomainFor } from "@/lib/slug";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 
@@ -82,12 +83,16 @@ export async function generateMetadata(
   const title = `${film.title} — Official Fan Club`;
   const description = `Join the ${film.title} fan club: first-look updates, contests, premiere-ticket draws, posters, trailer and reviews — all in one place.`;
   const images = imageId ? [`${base}/api/assets/${imageId}`] : undefined;
+  // The film's subdomain is the canonical home, whichever host served this.
+  const canonical = `https://${subdomainFor(slug)}`;
 
   return {
     title,
     description,
+    metadataBase: new URL(canonical),
+    alternates: { canonical },
     openGraph: {
-      title, description, type: "website", url: `${base}/fan/${slug}`,
+      title, description, type: "website", url: canonical, siteName: "PR.FYLYM",
       ...(images && { images }),
     },
     twitter: {
@@ -168,8 +173,20 @@ export default async function FanPage(
   const chip =
     "inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3.5 py-2 text-[13px] font-medium text-muted transition-colors hover:border-gold/50 hover:text-gold-deep";
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Movie",
+    name: film.title,
+    url: `https://${subdomainFor(slug)}`,
+    ...(film.genre && { genre: film.genre }),
+    ...(film.language && { inLanguage: film.language }),
+    ...(film.release_date && { datePublished: film.release_date }),
+    ...(heroSrc && { image: `${base}${heroSrc}` }),
+  };
+
   return (
     <div className="theme-fan min-h-screen scroll-smooth bg-background text-foreground" id="top">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Top brand nav */}
       <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 md:px-8">

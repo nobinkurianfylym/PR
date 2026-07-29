@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
 import { setActiveFilm } from "@/server/film";
-import { uniqueSlug } from "@/server/slug";
+import { slugify, uniqueSlug } from "@/server/slug";
+import { slugStatus } from "@/lib/slug";
 import { addMember } from "@/server/membership";
 import { planCampaign, seedMissions } from "@/server/brain";
 
@@ -28,21 +29,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Title and release date are required" }, { status: 400 });
   }
 
+  // Honour an available custom slug; otherwise auto-generate a unique one.
+  // The UNIQUE index on films.slug is the final guard against a concurrent
+  // duplicate — we retry once if it loses that race.
+  const wanted = slugify(String(b.slug ?? ""));
+  let slug =
+    wanted && slugStatus(wanted) === "ok" &&
+    !(await db().prepare("SELECT id FROM films WHERE slug = ?").bind(wanted).first())
+      ? wanted
+      : await uniqueSlug(title);
+
   const filmId = crypto.randomUUID();
   const database = db();
-  await database
-    .prepare(
-      `INSERT INTO films (id, user_id, title, genre, language, budget, marketing_budget,
-       release_date, poster_url, trailer_url, cast, crew, slug) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    )
-    .bind(
-      filmId, user.id, title,
-      String(b.genre ?? ""), String(b.language ?? ""),
-      Number(b.budget ?? 0), Number(b.marketingBudget ?? 0),
-      releaseDate, String(b.posterUrl ?? ""), String(b.trailerUrl ?? ""),
-      String(b.cast ?? ""), String(b.crew ?? ""), await uniqueSlug(title),
-    )
-    .run();
+  const insert = () =>
+    database
+      .prepare(
+        `INSERT INTO films (id, user_id, title, genre, language, budget, marketing_budget,
+         release_date, poster_url, trailer_url, cast, crew, slug) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      )
+      .bind(
+        filmId, user.id, title,
+        String(b.genre ?? ""), String(b.language ?? ""),
+        Number(b.budget ?? 0), Number(b.marketingBudget ?? 0),
+        releaseDate, String(b.posterUrl ?? ""), String(b.trailerUrl ?? ""),
+        String(b.cast ?? ""), String(b.crew ?? ""), slug,
+      )
+      .run();
+  try {
+    await insert();
+  } catch {
+    slug = await uniqueSlug(title);
+    await insert();
+  }
 
   await addMember(filmId, user.id, "admin");
 

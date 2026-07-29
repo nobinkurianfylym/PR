@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { api, useOverview } from "@/hooks/use-overview";
+import { slugify, slugStatus, subdomainFor } from "@/lib/slug";
 
 /**
  * The five-minute campaign wizard. Four steps, one flat schema — each step
@@ -81,6 +83,7 @@ export function CreateFilmWizard() {
   const {
     register,
     trigger,
+    watch,
     handleSubmit,
     formState: { errors },
   } = useForm<FilmValues>({
@@ -88,6 +91,33 @@ export function CreateFilmWizard() {
     defaultValues: { posterUrl: "", trailerUrl: "" },
     mode: "onTouched",
   });
+
+  // Live subdomain preview + availability. The slug follows the title until the
+  // producer edits it, then it's theirs.
+  const title = watch("title") ?? "";
+  const [slugInput, setSlugInput] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [avail, setAvail] = useState<{ available: boolean; reason: string | null } | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  const slug = slugTouched ? slugify(slugInput) : slugify(title);
+  const localStatus = slug ? slugStatus(slug) : "invalid";
+
+  useEffect(() => {
+    if (!slug || localStatus !== "ok") {
+      setAvail(null);
+      return;
+    }
+    setChecking(true);
+    const t = setTimeout(async () => {
+      const res = await fetch(`/api/slug-check?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
+      if (res.ok) setAvail((await res.json()) as { available: boolean; reason: string | null });
+      setChecking(false);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [slug, localStatus]);
+
+  const isAvailable = localStatus === "ok" && avail?.available === true;
 
   async function next() {
     if (await trigger(current.fields)) setStep((s) => s + 1);
@@ -126,7 +156,7 @@ export function CreateFilmWizard() {
             className="space-y-4"
             onSubmit={handleSubmit(async (values) => {
               setSubmitting(true);
-              const res = await api.createFilm(values);
+              const res = await api.createFilm({ ...values, slug: isAvailable ? slug : "" });
               if (res.ok) {
                 await refresh();
                 router.push("/campaign");
@@ -153,6 +183,43 @@ export function CreateFilmWizard() {
                 </Field>
               );
             })}
+
+            {step === 0 && (
+              <div className="rounded-lg border border-border bg-raised/40 p-3">
+                <label htmlFor="film-slug" className="text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
+                  Fan page address
+                </label>
+                <div className="mt-1.5 flex items-center gap-1 rounded-lg border border-border bg-background px-2.5">
+                  <span className="text-sm text-faint">https://</span>
+                  <input
+                    id="film-slug"
+                    value={slug}
+                    onChange={(e) => { setSlugTouched(true); setSlugInput(e.target.value); }}
+                    placeholder="your-film"
+                    autoCapitalize="none"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="min-w-0 flex-1 bg-transparent py-2 text-sm font-medium outline-none"
+                  />
+                  <span className="text-sm text-faint">.fylym.com</span>
+                </div>
+                <p className="mt-1.5 flex items-center gap-1.5 text-[13px]">
+                  {!slug ? (
+                    <span className="text-faint">Type a title to generate an address.</span>
+                  ) : localStatus === "reserved" ? (
+                    <span className="flex items-center gap-1 text-red-500"><X className="h-3.5 w-3.5" /> Reserved name — pick another.</span>
+                  ) : localStatus === "invalid" ? (
+                    <span className="flex items-center gap-1 text-red-500"><X className="h-3.5 w-3.5" /> Use a–z, 0–9 and hyphens.</span>
+                  ) : checking ? (
+                    <span className="text-faint">Checking availability…</span>
+                  ) : avail?.available ? (
+                    <span className="flex items-center gap-1 text-emerald-500"><Check className="h-3.5 w-3.5" /> Available</span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-red-500"><X className="h-3.5 w-3.5" /> Already taken.</span>
+                  )}
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center justify-between pt-2">
               <Button

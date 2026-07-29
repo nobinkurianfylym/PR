@@ -22,7 +22,31 @@ export async function recordShare(slug: string, detail: string): Promise<void> {
   }
 }
 
+export interface FanRecord {
+  id: string;
+  name: string;
+  points: number;
+  shares: number;
+  verified: number;
+  ref_joins: number;
+  ref_visits: number;
+}
+
 export interface FanState {
-  fan: { name: string; points: number; shares: number } | null;
+  fan: FanRecord | null;
   rank: number | null;
+}
+
+/**
+ * The current fan's id, cached so share links can carry `?ref=<id>` for
+ * referral attribution. Set by the join bar once the fan is known.
+ */
+let fanId: string | null = null;
+export function setFanId(id: string | null): void {
+  fanId = id;
+}
+export function withRef(url: string): string {
+  if (!fanId) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}ref=${encodeURIComponent(fanId)}`;
 }

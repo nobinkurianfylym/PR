@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { ArrowRight, Quote, Ticket } from "lucide-react";
+import { ArrowRight, Gift, Quote, Ticket } from "lucide-react";
 import { db } from "@/server/db";
 import type { PressAsset } from "@/features/press/asset-card";
 import { SectionHeading } from "@/components/ui/section-nav";
@@ -13,6 +13,7 @@ import { PressCoverage, type CoverageLink } from "@/features/press/press-coverag
 import { FanJoinBar } from "@/features/press/fan-join-bar";
 import { FanLeaderboard } from "@/features/press/fan-leaderboard";
 import { FanBoard } from "@/features/press/fan-board";
+import { ReferralCapture } from "@/features/press/referral-capture";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 
@@ -129,6 +130,11 @@ export default async function FanPage(
     links: coverage.filter((c) => c.kind === kind),
   })).filter((g) => g.links.length > 0);
 
+  const { results: rewards } = await db()
+    .prepare("SELECT title, detail FROM fan_rewards WHERE film_id = ? ORDER BY sort, created_at")
+    .bind(film.id)
+    .all<{ title: string; detail: string }>();
+
   // The gallery shows everything visual (posters, stills, BTS, trailers);
   // non-visual files (EPK, audio) get a plain download list.
   const mediaAssets = assets.filter(
@@ -210,6 +216,8 @@ export default async function FanPage(
           </a>
         </div>
       </header>
+
+      <ReferralCapture slug={slug} />
 
       <main className="mx-auto max-w-6xl px-5 md:px-8">
         {/* Hero */}
@@ -386,6 +394,25 @@ export default async function FanPage(
             Join the conversation <ArrowRight className="h-4 w-4" strokeWidth={2} />
           </a>
         </section>
+
+        {rewards.length > 0 && (
+          <section className="mt-14 rounded-3xl border border-gold/30 bg-gradient-to-br from-gold/10 to-transparent p-6 sm:p-8">
+            <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-deep">
+              <Gift className="h-3.5 w-3.5" strokeWidth={1.5} /> What top fans win
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {rewards.map((r, i) => (
+                <div key={i} className="rounded-2xl border border-border bg-surface p-4">
+                  <p className="font-semibold">{r.title}</p>
+                  {r.detail && <p className="mt-1 text-sm text-muted">{r.detail}</p>}
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-faint">
+              Climb the leaderboard and verify your email to be eligible.
+            </p>
+          </section>
+        )}
 
         <FanLeaderboard slug={slug} />
 

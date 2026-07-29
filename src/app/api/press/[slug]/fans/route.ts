@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
-import { award, currentFan, fanRank, setFanCookie } from "@/server/fan";
+import { attributeReferral, award, currentFan, fanRank, setFanCookie } from "@/server/fan";
 import { clientIp, rateLimit } from "@/server/rate-limit";
 
 /**
@@ -54,6 +54,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
   if (fan) {
     await setFanCookie(film.id, fan.id);
     await award(film.id, fan.id, "join", "welcome");
+    // Credit whoever's share link brought them here (once, no self-referral).
+    await attributeReferral(film.id, fan.id);
   }
 
   const me = await currentFan(film.id);

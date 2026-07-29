@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Clapperboard, Download, ExternalLink, Mail, Send, ShieldCheck, Trash2, Users } from "lucide-react";
+import { Clapperboard, Download, ExternalLink, Gift, Mail, Send, ShieldCheck, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ interface Broadcast {
   id: string; scope: string; subject: string;
   recipient_count: number; sent_count: number; status: string; created_at: string;
 }
+interface RewardRow { id: string; title: string; detail: string }
 
 export default function AdminPage() {
   const { data } = useOverview();
@@ -35,6 +36,10 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [projects, setProjects] = useState<AdminProject[]>([]);
   const [selfId, setSelfId] = useState("");
+  const [rewardFilm, setRewardFilm] = useState("");
+  const [rewards, setRewards] = useState<RewardRow[]>([]);
+  const [rTitle, setRTitle] = useState("");
+  const [rDetail, setRDetail] = useState("");
   const [emailReady, setEmailReady] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
@@ -78,6 +83,28 @@ export default function AdminPage() {
     } else {
       alert(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Couldn't delete.");
     }
+  }
+
+  const loadRewards = useCallback(async (filmId: string) => {
+    if (!filmId) { setRewards([]); return; }
+    const res = await fetch(`/api/admin/rewards?film=${filmId}`, { cache: "no-store" });
+    if (res.ok) setRewards(((await res.json()) as { rewards: RewardRow[] }).rewards);
+  }, []);
+  useEffect(() => { void loadRewards(rewardFilm); }, [rewardFilm, loadRewards]);
+
+  async function addReward() {
+    if (!rewardFilm || !rTitle.trim()) return;
+    await fetch("/api/admin/rewards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filmId: rewardFilm, title: rTitle, detail: rDetail }),
+    });
+    setRTitle(""); setRDetail("");
+    await loadRewards(rewardFilm);
+  }
+  async function delReward(id: string) {
+    await fetch(`/api/admin/rewards?id=${id}`, { method: "DELETE" });
+    await loadRewards(rewardFilm);
   }
 
   // Client guard mirrors the server one; the API is the real gate.
@@ -203,6 +230,61 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        )}
+      </Card>
+
+      <Card>
+        <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
+          <Gift className="h-3.5 w-3.5" strokeWidth={1.5} /> Fan rewards
+        </p>
+        <p className="mt-1 text-[13px] text-faint">
+          Prizes shown to fans on a film&rsquo;s page — what the top of the leaderboard can win.
+        </p>
+        <div className="mt-4 flex flex-wrap items-end gap-2">
+          <div className="min-w-[12rem] flex-1">
+            <label htmlFor="reward-film" className="mb-1.5 block text-[13px] font-medium text-muted">Film</label>
+            <select
+              id="reward-film"
+              value={rewardFilm}
+              onChange={(e) => setRewardFilm(e.target.value)}
+              className="h-10 w-full rounded-lg border border-border bg-raised px-3 text-sm text-foreground"
+            >
+              <option value="">Select a film…</option>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </select>
+          </div>
+        </div>
+        {rewardFilm && (
+          <>
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <div className="min-w-[10rem] flex-1">
+                <Field label="Prize" htmlFor="reward-title">
+                  <Input id="reward-title" value={rTitle} onChange={(e) => setRTitle(e.target.value)} placeholder="e.g. 2 premiere tickets" />
+                </Field>
+              </div>
+              <div className="min-w-[10rem] flex-[2]">
+                <Field label="Detail (optional)" htmlFor="reward-detail">
+                  <Input id="reward-detail" value={rDetail} onChange={(e) => setRDetail(e.target.value)} placeholder="For the #1 fan of the week" />
+                </Field>
+              </div>
+              <Button type="button" onClick={() => void addReward()} disabled={!rTitle.trim()}>Add</Button>
+            </div>
+            {rewards.length > 0 && (
+              <div className="mt-4 divide-y divide-border rounded-xl border border-border">
+                {rewards.map((r) => (
+                  <div key={r.id} className="flex items-center gap-3 px-4 py-2.5 text-[13px]">
+                    <span className="min-w-0 flex-1">
+                      <span className="font-medium">{r.title}</span>
+                      {r.detail && <span className="text-faint"> — {r.detail}</span>}
+                    </span>
+                    <button onClick={() => void delReward(r.id)} aria-label={`Delete ${r.title}`} className="shrink-0 rounded-md p-1 text-faint transition-colors hover:bg-raised hover:text-red-500">
+                      <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </Card>
 

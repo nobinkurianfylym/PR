@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { downloadZip } from "client-zip";
 import { Download, Link2, Loader2, Play, Share2, X as Close } from "lucide-react";
 import { PlatformLogo } from "@/components/ui/platform-logo";
-import { recordShare } from "@/lib/fan-share";
+import { recordShare, withRef } from "@/lib/fan-share";
 import type { AssetType } from "@/types";
 
 interface Asset {
@@ -79,7 +79,7 @@ export function FanGallery({
 
   function share(a: Asset, t: (typeof TARGETS)[number]) {
     const origin = window.location.origin;
-    const page = encodeURIComponent(`${origin}/fan/${slug}/a/${a.id}`);
+    const page = encodeURIComponent(withRef(`${origin}/fan/${slug}/a/${a.id}`));
     const image = encodeURIComponent(`${origin}/api/assets/${a.id}`);
     const text = encodeURIComponent(`${filmTitle} — ${a.type.toLowerCase()}`);
     window.open(t.href({ page, image, text }), "_blank", "noopener,width=600,height=640");
@@ -208,7 +208,7 @@ export function FanGallery({
                           ))}
                           <button
                             onClick={async () => {
-                              await navigator.clipboard.writeText(`${window.location.origin}/fan/${slug}/a/${a.id}`);
+                              await navigator.clipboard.writeText(withRef(`${window.location.origin}/fan/${slug}/a/${a.id}`));
                               void recordShare(slug, `asset:${a.id}:copy`);
                               setMenuId(null);
                             }}

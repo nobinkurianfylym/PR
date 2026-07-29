@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { db } from "@/server/db";
+import { ReferralCapture } from "@/features/press/referral-capture";
 import type { AssetType } from "@/types";
 
 /**
@@ -89,6 +90,7 @@ export default async function AssetPage(
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl px-6 py-16 md:px-10">
+      <ReferralCapture slug={slug} />
       <Link
         href={`/fan/${slug}`}
         className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors hover:text-foreground"

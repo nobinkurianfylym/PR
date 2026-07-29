@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Check, Gift, Heart, Star, Ticket, Trophy, X as Close } from "lucide-react";
+import { Bell, Check, Gift, Heart, ShieldCheck, Star, Ticket, Trophy, X as Close } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import type { FanState } from "@/lib/fan-share";
+import { setFanId, type FanState } from "@/lib/fan-share";
 
 const PERKS = [
   { icon: Bell, text: "Every update, first" },
@@ -27,6 +27,8 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [verifyMsg, setVerifyMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/press/${slug}/fans`, { cache: "no-store" });
@@ -34,6 +36,23 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
   }, [slug]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Cache the fan id so share links can carry ?ref for referral credit.
+  useEffect(() => { setFanId(state?.fan?.id ?? null); }, [state]);
+
+  async function sendMagicLink(emailArg?: string) {
+    setVerifyMsg(null);
+    const res = await fetch(`/api/press/${slug}/fan-verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(emailArg ? { email: emailArg } : {}),
+    });
+    setVerifyMsg(
+      res.ok
+        ? "Check your email for a sign-in link."
+        : (((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Couldn't send the link."),
+    );
+  }
 
   // Keep the pill live when a share elsewhere on the page awards points.
   useEffect(() => {
@@ -74,13 +93,25 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
   return (
     <>
       {joined ? (
-        <div className="inline-flex items-center gap-3 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm">
+        <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm">
           <Star className="h-4 w-4 text-gold" fill="currentColor" strokeWidth={0} />
           <span className="font-medium">
             {joined.name ? `${joined.name}, you're a fan` : "You're a fan"}
           </span>
           <span className="text-gold-deep">· {joined.points} pts</span>
           {state?.rank && <span className="text-gold-deep">· Rank #{state.rank}</span>}
+          {joined.verified === 1 ? (
+            <span className="inline-flex items-center gap-1 text-emerald-600">
+              <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.5} /> Verified
+            </span>
+          ) : (
+            <button
+              onClick={() => void sendMagicLink()}
+              className="text-gold-deep underline-offset-2 hover:underline"
+            >
+              Verify to win prizes
+            </button>
+          )}
         </div>
       ) : (
         <Button
@@ -144,6 +175,22 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
               </Button>
               <p className="text-center text-[11px] text-faint">Free. Unsubscribe anytime.</p>
             </form>
+
+            <div className="border-t border-border p-6 pt-4">
+              <p className="text-[13px] font-medium text-muted">Already a fan on another device?</p>
+              <div className="mt-2 flex gap-2">
+                <Input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="you@email.com"
+                />
+                <Button type="button" variant="outline" onClick={() => void sendMagicLink(loginEmail)}>
+                  Email me a link
+                </Button>
+              </div>
+              {verifyMsg && <p className="mt-2 text-[13px] text-muted">{verifyMsg}</p>}
+            </div>
           </div>
         </div>
       )}
@@ -151,7 +198,7 @@ export function FanJoinBar({ slug, film }: { slug: string; film: string }) {
       {joined && (
         <p className="mt-2 flex items-center gap-1.5 text-xs text-faint">
           <Check className="h-3 w-3 text-emerald-400" strokeWidth={2} />
-          Share posters, trailers, and reviews below to earn points.
+          {verifyMsg ?? "Share posters, trailers, and reviews below to earn points."}
         </p>
       )}
     </>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Link2, Share2 } from "lucide-react";
 import { PlatformLogo } from "@/components/ui/platform-logo";
-import { recordShare } from "@/lib/fan-share";
+import { recordShare, withRef } from "@/lib/fan-share";
 
 /**
  * Compact page-share control: a single icon that expands to the platforms.
@@ -33,7 +33,9 @@ export function ShareMenu({ slug, caption }: { slug: string; caption: string }) 
     return () => window.removeEventListener("mousedown", onDown);
   }, [open]);
 
-  const pageUrl = () => (typeof window === "undefined" ? "" : window.location.href);
+  // The shared URL carries ?ref=<fanId> so we can credit the referral.
+  const pageUrl = () =>
+    typeof window === "undefined" ? "" : withRef(window.location.origin + window.location.pathname);
 
   function go(i: (typeof INTENTS)[number]) {
     window.open(

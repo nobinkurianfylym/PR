@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import QRCode from "qrcode";
 import { ArrowRight, Gift, Quote, Ticket } from "lucide-react";
 import { db } from "@/server/db";
 import type { PressAsset } from "@/features/press/asset-card";
@@ -14,6 +13,7 @@ import { FanJoinBar } from "@/features/press/fan-join-bar";
 import { FanLeaderboard } from "@/features/press/fan-leaderboard";
 import { FanBoard } from "@/features/press/fan-board";
 import { ReferralCapture } from "@/features/press/referral-capture";
+import { ScanToJoin } from "@/features/press/scan-to-join";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 
@@ -153,16 +153,6 @@ export default async function FanPage(
     film.release_date ? ` — in cinemas ${fmtDate(film.release_date)}.` : "."
   }`;
 
-  // A scan-to-join QR of this very page for posters and the cinema lobby.
-  let qrSvg: string | null = null;
-  try {
-    qrSvg = await QRCode.toString(`${base}/fan/${slug}`, {
-      type: "svg", margin: 0, color: { dark: "#241d13", light: "#00000000" },
-    });
-  } catch {
-    qrSvg = null;
-  }
-
   const meta = [film.genre, film.language].filter(Boolean).join(" · ");
 
   // Top-nav anchors — only the sections that exist.
@@ -272,18 +262,7 @@ export default async function FanPage(
                 {film.title.charAt(0)}
               </div>
             )}
-            {qrSvg && (
-              <div className="absolute bottom-4 right-4 flex items-center gap-3 rounded-xl bg-espresso/95 p-3 pr-4 shadow-xl backdrop-blur">
-                <div
-                  className="h-16 w-16 rounded-md bg-white p-1.5 [&>svg]:h-full [&>svg]:w-full"
-                  dangerouslySetInnerHTML={{ __html: qrSvg }}
-                />
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-gold-soft">Join the fan club</p>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-[#c7bca4]">Scan to join</p>
-                </div>
-              </div>
-            )}
+            <ScanToJoin url={`${base}/fan/${slug}`} />
           </div>
         </section>
 

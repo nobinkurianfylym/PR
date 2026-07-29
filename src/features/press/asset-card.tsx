@@ -97,7 +97,7 @@ export function AssetCard({
 
   function share(target: (typeof TARGETS)[number]) {
     const origin = window.location.origin;
-    const page = encodeURIComponent(`${origin}/press/${slug}/a/${asset.id}`);
+    const page = encodeURIComponent(`${origin}/fan/${slug}/a/${asset.id}`);
     const image = encodeURIComponent(`${origin}${fileUrl}`);
     const text = encodeURIComponent(`${filmTitle} — ${asset.type.toLowerCase()}`);
     window.open(target.href({ page, image, text }), "_blank", "noopener,width=600,height=640");
@@ -175,7 +175,7 @@ export function AssetCard({
                   <button
                     onClick={async () => {
                       await navigator.clipboard.writeText(
-                        `${window.location.origin}/press/${slug}/a/${asset.id}`,
+                        `${window.location.origin}/fan/${slug}/a/${asset.id}`,
                       );
                       void recordShare(slug, `asset:${asset.id}:copy`);
                       setCopied(true);

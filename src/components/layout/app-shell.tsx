@@ -11,6 +11,8 @@ import {
   FolderLock,
   MessageSquareQuote,
   ShieldCheck,
+  Heart,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -66,6 +68,19 @@ function Frame({ children }: { children: ReactNode }) {
               {label}
             </Link>
           ))}
+          {data?.film?.slug && (
+            <a
+              href={`/fan/${data.film.slug}`}
+              target="_blank"
+              rel="noopener"
+              className="mt-2 flex items-center gap-3 rounded-lg border border-gold/25 px-3 py-2 text-sm text-gold-deep transition-colors hover:bg-raised/60"
+              title="Open the public fan page in a new tab"
+            >
+              <Heart className="h-4 w-4" strokeWidth={1.5} />
+              Fan Page
+              <ExternalLink className="ml-auto h-3 w-3" strokeWidth={1.5} />
+            </a>
+          )}
           {data?.isMasterAdmin && (
             <Link
               href="/admin"

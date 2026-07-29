@@ -86,7 +86,7 @@ export async function generateMetadata(
     title,
     description,
     openGraph: {
-      title, description, type: "website", url: `${base}/press/${slug}`,
+      title, description, type: "website", url: `${base}/fan/${slug}`,
       ...(images && { images }),
     },
     twitter: {
@@ -145,7 +145,7 @@ export default async function FanPage(
   // A scan-to-join QR of this very page for posters and the cinema lobby.
   let qrSvg: string | null = null;
   try {
-    qrSvg = await QRCode.toString(`${base}/press/${slug}`, {
+    qrSvg = await QRCode.toString(`${base}/fan/${slug}`, {
       type: "svg", margin: 0, color: { dark: "#241d13", light: "#00000000" },
     });
   } catch {

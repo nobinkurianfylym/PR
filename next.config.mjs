@@ -47,6 +47,11 @@ const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // The public page moved from /press to /fan — keep every previously shared
+  // link (kits, asset cards) working.
+  async redirects() {
+    return [{ source: "/press/:path*", destination: "/fan/:path*", permanent: true }];
+  },
 };
 
 export default nextConfig;

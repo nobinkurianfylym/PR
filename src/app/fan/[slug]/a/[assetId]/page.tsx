@@ -67,7 +67,7 @@ export async function generateMetadata(
     title,
     description,
     openGraph: {
-      title, description, type: "article", url: `${base}/press/${slug}/a/${a.id}`,
+      title, description, type: "article", url: `${base}/fan/${slug}/a/${a.id}`,
       ...(images && { images }),
     },
     twitter: {
@@ -90,7 +90,7 @@ export default async function AssetPage(
   return (
     <div className="mx-auto min-h-screen max-w-3xl px-6 py-16 md:px-10">
       <Link
-        href={`/press/${slug}`}
+        href={`/fan/${slug}`}
         className="inline-flex items-center gap-1.5 text-[13px] text-muted transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />

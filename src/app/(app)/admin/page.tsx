@@ -182,7 +182,7 @@ export default function AdminPage() {
                   <span className="truncate">{p.title}</span>
                   {p.published === 1 ? (
                     <a
-                      href={`/press/${p.slug}`}
+                      href={`/fan/${p.slug}`}
                       target="_blank"
                       rel="noopener"
                       className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-900 px-1.5 py-0.5 text-[10px] text-emerald-400 hover:text-emerald-300"

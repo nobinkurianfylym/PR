@@ -20,7 +20,7 @@ export function PressKitPanel() {
   const { slug, published } = data.film;
   const isLive = published === 1;
   const submissionsOpen = data.film.submissions_open === 1;
-  const url = typeof window === "undefined" ? "" : `${window.location.origin}/press/${slug}`;
+  const url = typeof window === "undefined" ? "" : `${window.location.origin}/fan/${slug}`;
 
   async function toggle() {
     setBusy(true);
@@ -50,7 +50,7 @@ export function PressKitPanel() {
               : "The page is offline. Only you and people holding a share link can reach these files."}
           </p>
           <code className="mt-3 block truncate rounded-lg border border-border bg-raised px-3 py-2 text-[13px] text-foreground">
-            /press/{slug}
+            /fan/{slug}
           </code>
 
           <label className="mt-4 flex items-start gap-2.5 text-[13px] text-muted">
@@ -89,7 +89,7 @@ export function PressKitPanel() {
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />}
             {copied ? "Copied" : "Copy link"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => window.open(`/press/${slug}`, "_blank")}>
+          <Button variant="outline" size="sm" onClick={() => window.open(`/fan/${slug}`, "_blank")}>
             <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} /> Open
           </Button>
           <Button size="sm" onClick={() => void toggle()} disabled={busy}>

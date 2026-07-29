@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { ArrowRight, Quote, Ticket } from "lucide-react";
 import { db } from "@/server/db";
-import { AssetCard, type PressAsset } from "@/features/press/asset-card";
+import type { PressAsset } from "@/features/press/asset-card";
 import { SectionHeading } from "@/components/ui/section-nav";
-import { groupAssets } from "@/lib/asset-sections";
+import { FanGallery } from "@/features/press/fan-gallery";
 import { SubmitForm } from "@/features/press/submit-form";
 import { ShareMenu } from "@/features/press/share-menu";
 import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
@@ -129,7 +129,12 @@ export default async function FanPage(
     links: coverage.filter((c) => c.kind === kind),
   })).filter((g) => g.links.length > 0);
 
-  const assetGroups = groupAssets(assets);
+  // The gallery shows everything visual (posters, stills, BTS, trailers);
+  // non-visual files (EPK, audio) get a plain download list.
+  const mediaAssets = assets.filter(
+    (a) => a.content_type.startsWith("image/") || a.content_type.startsWith("video/"),
+  );
+  const fileAssets = assets.filter((a) => !mediaAssets.includes(a));
   const musicLinks = linksIn(links, "music");
   const ticketLinks = linksIn(links, "tickets");
   const officialLinks = linksIn(links, "official");
@@ -157,7 +162,7 @@ export default async function FanPage(
   // Top-nav anchors — only the sections that exist.
   const nav = [
     { id: "top", label: "Home" },
-    ...(assetGroups.length > 0 ? [{ id: "gallery", label: "Gallery" }] : []),
+    ...(mediaAssets.length > 0 ? [{ id: "gallery", label: "Gallery" }] : []),
     ...(coverageGroups.length > 0 ? [{ id: "reviews", label: "Reviews" }] : []),
     ...(musicLinks.length > 0 ? [{ id: "music-links", label: "Music" }] : []),
     { id: "fan-club", label: "Fan Club" },
@@ -307,26 +312,30 @@ export default async function FanPage(
         )}
 
         {/* Gallery */}
-        <div id="gallery" className="scroll-mt-20">
-          {assets.length === 0 ? (
-            <p className="py-20 text-center text-sm text-faint">
-              Materials are being prepared. Please check back shortly.
-            </p>
-          ) : (
-            <div className="space-y-12 pt-6">
-              {assetGroups.map(({ section, items }) => (
-                <section key={section.id}>
-                  <SectionHeading id={section.id} title={section.label} count={items.length} />
-                  <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {items.map((a) => (
-                      <AssetCard key={a.id} asset={a} slug={slug} filmTitle={film.title} />
-                    ))}
-                  </div>
-                </section>
+        {mediaAssets.length > 0 ? (
+          <FanGallery slug={slug} filmTitle={film.title} assets={mediaAssets} />
+        ) : assets.length === 0 ? (
+          <p className="py-20 text-center text-sm text-faint">
+            Materials are being prepared. Please check back shortly.
+          </p>
+        ) : null}
+
+        {fileAssets.length > 0 && (
+          <section className="mt-14">
+            <SectionHeading id="files" title="Press kit files" count={fileAssets.length} />
+            <div className="mt-5 flex flex-wrap gap-2">
+              {fileAssets.map((a) => (
+                <a
+                  key={a.id}
+                  href={`/api/assets/${a.id}?download`}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-4 py-2 text-[13px] font-medium text-muted transition-colors hover:border-gold/50 hover:text-gold-deep"
+                >
+                  {a.type} · {a.name}
+                </a>
               ))}
             </div>
-          )}
-        </div>
+          </section>
+        )}
 
         {coverageGroups.length > 0 && (
           <div id="reviews" className="scroll-mt-20">

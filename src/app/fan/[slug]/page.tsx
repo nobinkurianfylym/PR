@@ -353,12 +353,12 @@ export default async function FanPage(
                   rel="noopener"
                   className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-gold/40"
                 >
-                  <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-raised">
+                  <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-raised to-background">
                     {l.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={l.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" />
+                      <img src={l.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" />
                     ) : (
-                      <PlatformLogo platform={l.id} className="h-8 w-8 text-faint" />
+                      <PlatformLogo platform={l.id} className="h-14 w-14 text-faint/70" />
                     )}
                     <span className="absolute bottom-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-md bg-black/55 backdrop-blur-sm">
                       <PlatformLogo platform={l.id} className="h-3.5 w-3.5 text-white" />

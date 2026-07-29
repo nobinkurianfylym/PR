@@ -33,7 +33,9 @@ function cleanId(id: string): string | null {
 }
 
 export function youtubeThumb(id: string): string {
-  return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+  // mqdefault is 16:9 with no black bars (hqdefault is 4:3 and letterboxes a
+  // widescreen video), so it fills a cropped thumbnail cleanly. Always exists.
+  return `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
 }
 
 function meta(html: string, prop: string): string | null {

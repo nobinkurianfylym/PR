@@ -15,8 +15,26 @@ import { RESERVED, ROOT_DOMAIN } from "@/lib/slug";
  */
 const SUFFIX = `.${ROOT_DOMAIN}`;
 
+/**
+ * Sibling FYLYM products whose subdomains currently resolve to this worker.
+ * Send them to their real apps so they never show the PR page. (The clean
+ * long-term fix is pointing each subdomain at its own app in Cloudflare; this
+ * guarantees correct routing regardless.)
+ */
+const PRODUCT_REDIRECTS: Record<string, string> = {
+  "pitch.fylym.com": "https://fylympitch.nobinkurian.workers.dev",
+  "scheduler.fylym.com": "https://scheduler-bep.pages.dev",
+  "writer.fylym.com": "https://web.nobinkurian.workers.dev",
+};
+
 export function middleware(req: NextRequest) {
   const host = ((req.headers.get("host") ?? "").split(":")[0] ?? "").toLowerCase();
+
+  const redirectTo = PRODUCT_REDIRECTS[host];
+  if (redirectTo) {
+    return NextResponse.redirect(`${redirectTo}${req.nextUrl.pathname}${req.nextUrl.search}`, 302);
+  }
+
   if (!host.endsWith(SUFFIX)) return NextResponse.next();
 
   const label = host.slice(0, -SUFFIX.length);

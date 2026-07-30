@@ -15,6 +15,9 @@ export const RESERVED = new Set([
   "login", "signup", "auth", "root", "system", "assets", "media", "app",
   "pr", "static", "email", "ftp", "ns", "ns1", "ns2", "blog", "status",
   "docs", "fan", "press", "cname", "smtp", "webmail", "test", "staging",
+  // Other FYLYM products — each has its own site on its own subdomain, so a
+  // film can never claim one and the wildcard router leaves them untouched.
+  "scheduler", "pitch", "writer", "academy", "studio", "fylym",
 ]);
 
 /**

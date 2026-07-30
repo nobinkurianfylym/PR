@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Crown, ShieldCheck, Trophy } from "lucide-react";
+import { ChevronDown, Crown, ShieldCheck, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PointsFan {
@@ -41,6 +41,7 @@ export function FanLeaderboard({ slug }: { slug: string }) {
   const [sharers, setSharers] = useState<ShareFan[]>([]);
   const [totalFans, setTotalFans] = useState(0);
   const [tab, setTab] = useState<"fans" | "sharers">("fans");
+  const [expanded, setExpanded] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/press/${slug}/leaderboard`, { cache: "no-store" });
@@ -72,7 +73,10 @@ export function FanLeaderboard({ slug }: { slug: string }) {
         }));
 
   const leader = rows[0];
-  const rest = rows.slice(1);
+  const others = rows.slice(1);
+  // Show the crowned leader + the next two (top 3) until expanded.
+  const VISIBLE = 2;
+  const rest = expanded ? others : others.slice(0, VISIBLE);
   const crownLabel = tab === "fans" ? "Biggest fan" : "Top sharer";
 
   const name = (n: string, v: number) => (
@@ -97,7 +101,7 @@ export function FanLeaderboard({ slug }: { slug: string }) {
         {(["fans", "sharers"] as const).map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => { setTab(t); setExpanded(false); }}
             className={cn(
               "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
               tab === t ? "bg-gold text-white" : "border border-white/15 text-white/60 hover:text-white",
@@ -151,6 +155,19 @@ export function FanLeaderboard({ slug }: { slug: string }) {
                 </li>
               ))}
             </ol>
+          )}
+
+          {others.length > VISIBLE && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 py-3 text-[13px] font-semibold text-white/80 transition-colors hover:border-gold/40 hover:text-white"
+            >
+              {expanded ? "Show less" : `Show all ${rows.length}`}
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+                strokeWidth={2}
+              />
+            </button>
           )}
         </div>
       )}

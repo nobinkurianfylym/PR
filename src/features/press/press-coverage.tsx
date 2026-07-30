@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Link2, Play, Share2 } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Link2, Play, Share2 } from "lucide-react";
 import { domainOf } from "@/lib/utils";
 import { recordShare } from "@/lib/fan-share";
 import { platformFromUrl } from "@/lib/platforms";
@@ -48,6 +48,7 @@ export function PressCoverage({
   links: CoverageLink[];
 }) {
   const [tab, setTab] = useState("all");
+  const [expanded, setExpanded] = useState(false);
   const [shareId, setShareId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -63,8 +64,11 @@ export function PressCoverage({
 
   const kinds = KIND_ORDER.filter((k) => links.some((l) => l.kind === k));
   const filtered = tab === "all" ? links : links.filter((l) => l.kind === tab);
-  const featured = filtered.slice(0, 3);
-  const rest = filtered.slice(3);
+  // Links arrive newest-first; show only the latest 20 until expanded.
+  const LIMIT = 20;
+  const shown = expanded ? filtered : filtered.slice(0, LIMIT);
+  const featured = shown.slice(0, 3);
+  const rest = shown.slice(3);
   const isVideo = (url: string) => /(youtube\.com|youtu\.be)/i.test(url);
 
   function share(l: CoverageLink, t: (typeof SHARE)[number]) {
@@ -158,7 +162,7 @@ export function PressCoverage({
         {(["all", ...kinds]).map((k) => (
           <button
             key={k}
-            onClick={() => setTab(k)}
+            onClick={() => { setTab(k); setExpanded(false); }}
             className={tab === k ? "border-b-2 border-gold pb-1 text-white" : "border-b-2 border-transparent pb-1 text-white/45 transition-colors hover:text-white/80"}
           >
             {k === "all" ? "All" : KIND_LABEL[k] ?? k}
@@ -205,6 +209,22 @@ export function PressCoverage({
               </div>
             </article>
           ))}
+        </div>
+      )}
+
+      {/* Expand / collapse — only the latest 20 show until opened. */}
+      {filtered.length > LIMIT && (
+        <div className="mt-8 flex justify-center border-t border-white/10 pt-7">
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-[13px] font-semibold text-white/80 transition-colors hover:border-gold/40 hover:text-white"
+          >
+            {expanded ? "Show less" : `Show all ${filtered.length}`}
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+              strokeWidth={2}
+            />
+          </button>
         </div>
       )}
     </section>

@@ -42,6 +42,21 @@ const config: Config = {
       borderRadius: {
         xl: "0.875rem",
         "2xl": "1.25rem",
+        "3xl": "1.75rem",
+        "4xl": "2.25rem",
+      },
+      // Warm-tinted, layered elevation system for the cream fan page — soft and
+      // premium rather than harsh drop shadows.
+      boxShadow: {
+        soft: "0 1px 2px rgba(40, 30, 15, 0.04), 0 2px 8px -2px rgba(40, 30, 15, 0.06)",
+        card: "0 1px 2px rgba(40, 30, 15, 0.04), 0 10px 30px -14px rgba(40, 30, 15, 0.16)",
+        elevated:
+          "0 2px 6px rgba(40, 30, 15, 0.05), 0 18px 40px -16px rgba(40, 30, 15, 0.18)",
+        cinematic:
+          "0 8px 20px rgba(20, 14, 6, 0.10), 0 40px 80px -24px rgba(20, 14, 6, 0.35)",
+      },
+      transitionTimingFunction: {
+        "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },

@@ -16,15 +16,17 @@
 
   /* Warm cinematic theme — scoped to the public fan page. Cream paper, deep
      espresso text, brass accents. Same token names, so every
-     bg-background / text-foreground / border-border utility just re-tones. */
+     bg-background / text-foreground / border-border utility just re-tones.
+     Retuned for a crisper, more premium warm-neutral: cleaner paper, softer
+     hairline borders, a touch more contrast in the ink. */
   .theme-fan {
-    --background: 42 34% 92%;
-    --surface: 44 42% 96%;
-    --raised: 40 28% 88%;
-    --border: 38 20% 81%;
-    --foreground: 28 30% 14%;
-    --muted: 30 14% 34%;
-    --faint: 33 12% 48%;
+    --background: 40 33% 93%;
+    --surface: 42 46% 97%;
+    --raised: 40 26% 89%;
+    --border: 38 20% 84%;
+    --foreground: 26 30% 12%;
+    --muted: 30 12% 36%;
+    --faint: 33 10% 50%;
     color-scheme: light;
   }
 
@@ -34,8 +36,63 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
   }
   ::selection {
-    @apply bg-foreground text-background;
+    @apply bg-gold text-white;
+  }
+  /* A calmer, more premium tap highlight on the warm page. */
+  .theme-fan {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Refined focus ring — consistent across the fan page. */
+  .theme-fan :focus-visible {
+    outline: 2px solid theme("colors.gold.DEFAULT");
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+@layer utilities {
+  /* Section reveal — a gentle fade-and-rise as content enters the viewport.
+     Compositor-only (opacity + transform), so it holds 60fps. Toggled by the
+     <Reveal> client component; degrades to fully visible without JS and honours
+     reduced-motion. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+  .reveal[data-shown="true"] {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Hero entrance — plays once on load for above-the-fold content. */
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .rise-in {
+    animation: rise-in 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .reveal[data-shown="true"],
+    .rise-in {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+      animation: none !important;
+    }
   }
 }

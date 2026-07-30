@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, Trash2 } from "lucide-react";
+import { ChevronDown, MessageCircle, Send, Trash2 } from "lucide-react";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 
 interface Post {
@@ -52,6 +52,7 @@ export function FanBoard({
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const busy = useRef(false);
 
   const load = useCallback(async () => {
@@ -103,6 +104,10 @@ export function FanBoard({
     if (res.status === 204) setState((s) => ({ ...s, posts: s.posts.filter((p) => p.id !== id) }));
     busy.current = false;
   }
+
+  // Show the latest few until expanded — the wall stays compact.
+  const LIMIT = 5;
+  const shownPosts = expanded ? state.posts : state.posts.slice(0, LIMIT);
 
   return (
     <div id="fan-wall" className="scroll-mt-24">
@@ -166,7 +171,7 @@ export function FanBoard({
 
       {state.posts.length > 0 ? (
         <ul className="mt-6 space-y-3">
-          {state.posts.map((p) => (
+          {shownPosts.map((p) => (
             <li key={p.id} className="group flex gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-sm font-semibold text-gold-soft">
                 {(p.name || "F").trim().charAt(0).toUpperCase()}
@@ -196,6 +201,19 @@ export function FanBoard({
         <p className="mt-6 rounded-2xl border border-dashed border-white/15 py-10 text-center text-sm text-white/40">
           No posts yet — be the first to say something.
         </p>
+      )}
+
+      {state.posts.length > LIMIT && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 py-3 text-[13px] font-semibold text-white/80 transition-colors hover:border-gold/40 hover:text-white"
+        >
+          {expanded ? "Show less" : `Show all ${state.posts.length}`}
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+            strokeWidth={2}
+          />
+        </button>
       )}
     </div>
   );

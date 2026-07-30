@@ -28,12 +28,13 @@ interface Row {
   sub: string;
 }
 
-const MEDAL = ["text-amber-500", "text-zinc-500", "text-orange-600"];
+const MEDAL = ["text-amber-400", "text-zinc-300", "text-orange-400"];
 
 /**
  * The fan leaderboards — the reason to earn points. Two boards: biggest fans
  * (points) and top sharers (who actually brought new fans in via their share
  * links). The leader is crowned; the rest are ranked. Refreshes on fan:update.
+ * Styled for the dark espresso Fan Club block it lives in.
  */
 export function FanLeaderboard({ slug }: { slug: string }) {
   const [top, setTop] = useState<PointsFan[]>([]);
@@ -77,18 +78,18 @@ export function FanLeaderboard({ slug }: { slug: string }) {
   const name = (n: string, v: number) => (
     <span className="inline-flex items-center gap-1.5">
       <span className="truncate">{n || "Anonymous fan"}</span>
-      {v === 1 && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" strokeWidth={1.5} />}
+      {v === 1 && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-400" strokeWidth={1.5} />}
     </span>
   );
 
   return (
-    <section id="fan-club" className="mt-14 scroll-mt-24">
+    <div>
       <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
+        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-soft">
           <Trophy className="h-3.5 w-3.5" strokeWidth={1.5} /> Fan Leaderboard
         </p>
         {totalFans > 0 && (
-          <span className="text-[13px] text-faint">{totalFans} {totalFans === 1 ? "fan" : "fans"}</span>
+          <span className="text-[13px] text-white/40">{totalFans} {totalFans === 1 ? "fan" : "fans"}</span>
         )}
       </div>
 
@@ -99,7 +100,7 @@ export function FanLeaderboard({ slug }: { slug: string }) {
             onClick={() => setTab(t)}
             className={cn(
               "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors",
-              tab === t ? "bg-gold text-white" : "border border-border text-muted hover:text-foreground",
+              tab === t ? "bg-gold text-white" : "border border-white/15 text-white/60 hover:text-white",
             )}
           >
             {t === "fans" ? "Biggest fans" : "Top sharers"}
@@ -108,7 +109,7 @@ export function FanLeaderboard({ slug }: { slug: string }) {
       </div>
 
       {rows.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-border py-10 text-center text-sm text-faint">
+        <p className="mt-6 rounded-2xl border border-dashed border-white/15 py-10 text-center text-sm text-white/40">
           {tab === "fans"
             ? "No points yet — join the fan club and share to top the board."
             : "No referrals yet — share your fan link to bring friends and top this board."}
@@ -116,36 +117,36 @@ export function FanLeaderboard({ slug }: { slug: string }) {
       ) : (
         <div className="mt-5 space-y-4">
           {leader && (
-            <div className="flex items-center gap-4 overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/15 to-transparent p-5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gold/20">
-                <Crown className="h-6 w-6 text-amber-500" strokeWidth={1.5} />
+            <div className="flex items-center gap-4 overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/25 to-transparent p-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gold/25">
+                <Crown className="h-6 w-6 text-amber-400" strokeWidth={1.5} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gold-deep">{crownLabel}</p>
-                <p className="truncate text-lg font-semibold">{name(leader.name, leader.verified)}</p>
-                {leader.city && <p className="text-xs text-faint">{leader.city}</p>}
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gold-soft">{crownLabel}</p>
+                <p className="truncate text-lg font-semibold text-[#f3ecdd]">{name(leader.name, leader.verified)}</p>
+                {leader.city && <p className="text-xs text-white/40">{leader.city}</p>}
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-2xl font-semibold tabular-nums text-gold-deep">{leader.big}</p>
-                <p className="text-[11px] text-faint">{leader.bigLabel}</p>
+                <p className="text-2xl font-semibold tabular-nums text-gold-soft">{leader.big}</p>
+                <p className="text-[11px] text-white/40">{leader.bigLabel}</p>
               </div>
             </div>
           )}
 
           {rest.length > 0 && (
-            <ol className="divide-y divide-border rounded-2xl border border-border bg-surface">
+            <ol className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
               {rest.map((f, i) => (
                 <li key={i} className="flex items-center gap-4 px-5 py-3">
-                  <span className={cn("w-6 shrink-0 text-center text-sm font-semibold tabular-nums", MEDAL[i + 1] ?? "text-faint")}>
+                  <span className={cn("w-6 shrink-0 text-center text-sm font-semibold tabular-nums", MEDAL[i + 1] ?? "text-white/40")}>
                     {i + 2}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{name(f.name, f.verified)}</p>
-                    {f.city && <p className="text-xs text-faint">{f.city}</p>}
+                    <p className="truncate text-sm font-medium text-[#f3ecdd]">{name(f.name, f.verified)}</p>
+                    {f.city && <p className="text-xs text-white/40">{f.city}</p>}
                   </div>
-                  <span className="shrink-0 text-xs text-faint">{f.sub}</span>
-                  <span className="shrink-0 text-sm font-medium tabular-nums text-muted">
-                    {f.big} <span className="text-faint">{tab === "fans" ? "pts" : "★"}</span>
+                  <span className="shrink-0 text-xs text-white/40">{f.sub}</span>
+                  <span className="shrink-0 text-sm font-medium tabular-nums text-white/70">
+                    {f.big} <span className="text-white/40">{tab === "fans" ? "pts" : "★"}</span>
                   </span>
                 </li>
               ))}
@@ -153,6 +154,6 @@ export function FanLeaderboard({ slug }: { slug: string }) {
           )}
         </div>
       )}
-    </section>
+    </div>
   );
 }

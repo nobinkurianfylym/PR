@@ -1,5 +1,46 @@
 import { cookies } from "next/headers";
-import { db } from "./db";
+import { db, bucket } from "./db";
+
+/**
+ * Every table whose rows belong to a single film and must be torn down with it.
+ * Keep in sync with the film-scoped schema — an omission here leaks orphans.
+ */
+const FILM_TABLES = [
+  "phases", "missions", "team_members", "reviews", "assets", "film_links",
+  "shared_links", "competitors", "opportunities", "film_members", "fans",
+  "fan_actions", "fan_posts", "fan_reviews", "checklist_state",
+];
+
+/**
+ * Permanently delete a film and everything behind it — the R2 objects for its
+ * assets and checklist attachments first (so a failure never orphans storage
+ * silently), then every film-scoped D1 row, its broadcasts, and the film
+ * itself. Used both when a master admin deletes a project directly and when
+ * deleting a user tears down the campaigns they own. Caller is responsible for
+ * authorization; this does the teardown unconditionally.
+ */
+export async function deleteFilmCascade(filmId: string): Promise<void> {
+  const d = db();
+  // R2 first — assets and any checklist attachments.
+  for (const table of ["assets", "checklist_state"]) {
+    const { results: keys } = await d
+      .prepare(`SELECT r2_key FROM ${table} WHERE film_id = ? AND r2_key != ''`)
+      .bind(filmId)
+      .all<{ r2_key: string }>();
+    for (const { r2_key } of keys) {
+      try {
+        await bucket().delete(r2_key);
+      } catch {
+        /* keep going — a missing object shouldn't block the delete */
+      }
+    }
+  }
+  for (const table of FILM_TABLES) {
+    await d.prepare(`DELETE FROM ${table} WHERE film_id = ?`).bind(filmId).run();
+  }
+  await d.prepare("DELETE FROM broadcasts WHERE scope = ?").bind(filmId).run();
+  await d.prepare("DELETE FROM films WHERE id = ?").bind(filmId).run();
+}
 
 /**
  * Which of a user's films is "active" — the one every page acts on. Stored in

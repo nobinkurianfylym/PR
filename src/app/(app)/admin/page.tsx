@@ -85,6 +85,23 @@ export default function AdminPage() {
     }
   }
 
+  async function deleteProject(p: AdminProject) {
+    const warn =
+      `Delete "${p.title}"?\n\n` +
+      `This permanently removes the campaign and everything in it — ${p.assets} file${p.assets === 1 ? "" : "s"}, ` +
+      `${p.fans} fan${p.fans === 1 ? "" : "s"}, its team and all messages. ` +
+      `The fan page${p.published === 1 ? " (currently live)" : ""} goes offline. This cannot be undone.`;
+    if (!confirm(warn)) return;
+    const res = await fetch(`/api/admin/projects/${p.id}`, { method: "DELETE" });
+    if (res.status === 204) {
+      setProjects((ps) => ps.filter((x) => x.id !== p.id));
+      if (rewardFilm === p.id) setRewardFilm("");
+      await load();
+    } else {
+      alert(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Couldn't delete.");
+    }
+  }
+
   const loadRewards = useCallback(async (filmId: string) => {
     if (!filmId) { setRewards([]); return; }
     const res = await fetch(`/api/admin/rewards?film=${filmId}`, { cache: "no-store" });
@@ -227,6 +244,13 @@ export default function AdminPage() {
                   {p.fans}★ · {p.assets} files · {p.team} team
                 </span>
                 <span className="shrink-0 text-faint">{formatDate(p.created_at.slice(0, 10))}</span>
+                <button
+                  onClick={() => void deleteProject(p)}
+                  aria-label={`Delete ${p.title}`}
+                  className="shrink-0 rounded-md p-1 text-faint transition-colors hover:bg-raised hover:text-red-500"
+                >
+                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                </button>
               </div>
             ))}
           </div>

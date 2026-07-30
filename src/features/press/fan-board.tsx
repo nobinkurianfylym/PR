@@ -37,6 +37,7 @@ const MAX_LEN = 500;
  * everyone reads; the team can delete. Kept fresh by polling every 12s while
  * the tab is visible (cheap, and true realtime would need paid sockets).
  * Community chat-group buttons sit on top for fans who'd rather talk live.
+ * Styled for the dark espresso Fan Club block it lives in.
  */
 export function FanBoard({
   slug,
@@ -104,48 +105,49 @@ export function FanBoard({
   }
 
   return (
-    <section id="fan-wall" className="mt-14 scroll-mt-24">
-      <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
-        <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.5} /> Fan Wall
-      </p>
-      <h2 className="mt-1 text-lg font-semibold tracking-tight">Join the conversation</h2>
-
-      {(whatsapp || telegram) && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {whatsapp && (
-            <a
-              href={whatsapp}
-              target="_blank"
-              rel="noopener"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
-            >
-              <PlatformLogo platform="whatsapp" className="h-4 w-4" /> WhatsApp community
-            </a>
-          )}
-          {telegram && (
-            <a
-              href={telegram}
-              target="_blank"
-              rel="noopener"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#229ED9] px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
-            >
-              <PlatformLogo platform="telegram" className="h-4 w-4" /> Telegram community
-            </a>
-          )}
-        </div>
-      )}
+    <div id="fan-wall" className="scroll-mt-24">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-soft">
+          <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.5} /> Fan Wall
+        </p>
+        {(whatsapp || telegram) && (
+          <div className="flex flex-wrap gap-2">
+            {whatsapp && (
+              <a
+                href={whatsapp}
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-3.5 py-1.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+              >
+                <PlatformLogo platform="whatsapp" className="h-3.5 w-3.5" /> WhatsApp
+              </a>
+            )}
+            {telegram && (
+              <a
+                href={telegram}
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-2 rounded-full bg-[#229ED9] px-3.5 py-1.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+              >
+                <PlatformLogo platform="telegram" className="h-3.5 w-3.5" /> Telegram
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+      <p className="mt-1 text-sm text-white/50">Talk with fellow fans — everyone reads, joined fans post.</p>
 
       {state.canPost ? (
-        <form onSubmit={post} className="mt-5">
+        <form onSubmit={post} className="mt-4">
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value.slice(0, MAX_LEN))}
             rows={2}
             placeholder="Share a thought with fellow fans…"
-            className="w-full resize-none rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none transition-colors placeholder:text-faint focus:border-foreground/30"
+            className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-gold/50"
           />
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-[11px] text-faint">{body.length}/{MAX_LEN}</span>
+            <span className="text-[11px] text-white/40">{body.length}/{MAX_LEN}</span>
             <button
               type="submit"
               disabled={sending || !body.trim()}
@@ -154,10 +156,10 @@ export function FanBoard({
               <Send className="h-3.5 w-3.5" strokeWidth={1.5} /> {sending ? "Posting…" : "Post"}
             </button>
           </div>
-          {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+          {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
         </form>
       ) : (
-        <p className="mt-5 rounded-xl border border-dashed border-border px-4 py-3 text-sm text-faint">
+        <p className="mt-4 rounded-xl border border-dashed border-white/15 px-4 py-3 text-sm text-white/50">
           Join the fan club above to post — reading is open to everyone.
         </p>
       )}
@@ -165,24 +167,24 @@ export function FanBoard({
       {state.posts.length > 0 ? (
         <ul className="mt-6 space-y-3">
           {state.posts.map((p) => (
-            <li key={p.id} className="group flex gap-3 rounded-xl border border-border bg-surface px-4 py-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/15 text-sm font-semibold text-gold-deep">
+            <li key={p.id} className="group flex gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-sm font-semibold text-gold-soft">
                 {(p.name || "F").trim().charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-                  <span className="font-medium">{p.name || "Anonymous fan"}</span>
-                  <span className="text-[11px] text-faint">
+                  <span className="font-medium text-[#f3ecdd]">{p.name || "Anonymous fan"}</span>
+                  <span className="text-[11px] text-white/40">
                     {p.city ? `${p.city} · ` : ""}{timeAgo(p.created_at)}
                   </span>
                 </p>
-                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-muted">{p.body}</p>
+                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-white/70">{p.body}</p>
               </div>
               {state.isAdmin && (
                 <button
                   onClick={() => void remove(p.id)}
                   aria-label="Delete post"
-                  className="h-7 w-7 shrink-0 rounded-md text-faint opacity-0 transition-all hover:bg-raised hover:text-red-500 focus:opacity-100 group-hover:opacity-100"
+                  className="h-7 w-7 shrink-0 rounded-md text-white/40 opacity-0 transition-all hover:bg-white/10 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
                 >
                   <Trash2 className="mx-auto h-3.5 w-3.5" strokeWidth={1.5} />
                 </button>
@@ -191,10 +193,10 @@ export function FanBoard({
           ))}
         </ul>
       ) : (
-        <p className="mt-6 rounded-2xl border border-dashed border-border py-10 text-center text-sm text-faint">
+        <p className="mt-6 rounded-2xl border border-dashed border-white/15 py-10 text-center text-sm text-white/40">
           No posts yet — be the first to say something.
         </p>
       )}
-    </section>
+    </div>
   );
 }

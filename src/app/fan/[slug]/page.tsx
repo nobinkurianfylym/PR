@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { ArrowRight, Gift, Quote, Ticket } from "lucide-react";
+import { Ticket } from "lucide-react";
 import { db } from "@/server/db";
 import type { PressAsset } from "@/features/press/asset-card";
 import { SectionHeading } from "@/components/ui/section-nav";
@@ -9,14 +9,16 @@ import { FanGallery } from "@/features/press/fan-gallery";
 import { SubmitForm } from "@/features/press/submit-form";
 import { ShareMenu } from "@/features/press/share-menu";
 import { PressCoverage, type CoverageLink } from "@/features/press/press-coverage";
+import { FanReviews } from "@/features/press/fan-reviews";
+import { AudienceReviews } from "@/features/press/audience-reviews";
 import { FanJoinBar } from "@/features/press/fan-join-bar";
-import { FanLeaderboard } from "@/features/press/fan-leaderboard";
-import { FanBoard } from "@/features/press/fan-board";
+import { FanClub } from "@/features/press/fan-club";
 import { ReferralCapture } from "@/features/press/referral-capture";
 import { ScanToJoin } from "@/features/press/scan-to-join";
 import { subdomainFor } from "@/lib/slug";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
+import type { Review } from "@/types";
 
 /** Reads D1 per request — press kits must reflect the vault immediately. */
 export const dynamic = "force-dynamic";
@@ -110,7 +112,7 @@ export default async function FanPage(
   const film = await getFilm(slug);
   if (!film) notFound();
 
-  const [{ results: assets }, links, { results: coverage }, heroId, base] = await Promise.all([
+  const [{ results: assets }, links, { results: coverage }, { results: reviews }, heroId, base] = await Promise.all([
     db()
       .prepare(
         "SELECT id, name, type, content_type, size FROM assets WHERE film_id = ? AND status = 'approved' ORDER BY created_at DESC",
@@ -126,6 +128,13 @@ export default async function FanPage(
       )
       .bind(film.id)
       .all<CoverageLink>(),
+    db()
+      .prepare(
+        `SELECT id, quote, publication, critic, rating, date FROM reviews
+          WHERE film_id = ? ORDER BY date DESC, rowid DESC`,
+      )
+      .bind(film.id)
+      .all<Review>(),
     getHeroImage(film.id),
     origin(),
   ]);
@@ -146,6 +155,10 @@ export default async function FanPage(
     (a) => a.content_type.startsWith("image/") || a.content_type.startsWith("video/"),
   );
   const fileAssets = assets.filter((a) => !mediaAssets.includes(a));
+  // The uploaded title logo (most recent approved Logo image), if any — used to
+  // brand the review cards.
+  const logoAsset = assets.find((a) => a.type === "Logo" && a.content_type.startsWith("image/"));
+  const logoSrc = logoAsset ? `/api/assets/${logoAsset.id}` : null;
   const musicLinks = linksIn(links, "music");
   const ticketLinks = linksIn(links, "tickets");
   const officialLinks = linksIn(links, "official");
@@ -164,7 +177,10 @@ export default async function FanPage(
   const nav = [
     { id: "top", label: "Home" },
     ...(mediaAssets.length > 0 ? [{ id: "gallery", label: "Gallery" }] : []),
-    ...(coverageGroups.length > 0 ? [{ id: "reviews", label: "Reviews" }] : []),
+    {
+      id: coverageGroups.length > 0 ? "reviews" : reviews.length > 0 ? "review-wall" : "audience-reviews",
+      label: "Reviews",
+    },
     ...(musicLinks.length > 0 ? [{ id: "music-links", label: "Music" }] : []),
     { id: "fan-club", label: "Fan Club" },
     { id: "fan-wall", label: "Updates" },
@@ -345,6 +361,12 @@ export default async function FanPage(
           <PressCoverage slug={slug} film={film.title} links={coverage} />
         )}
 
+        {reviews.length > 0 && (
+          <FanReviews slug={slug} film={film.title} reviews={reviews} logoSrc={logoSrc} />
+        )}
+
+        <AudienceReviews slug={slug} film={film.title} logoSrc={logoSrc} />
+
         {musicLinks.length > 0 && (
           <section id="music-links" className="mt-14 scroll-mt-20">
             <SectionHeading id="music-links-h" title="Music" count={musicLinks.length} />
@@ -377,51 +399,14 @@ export default async function FanPage(
           </section>
         )}
 
-        {/* Be part of the story band */}
-        <section className="mt-16 overflow-hidden rounded-2xl bg-espresso px-8 py-12 text-center md:py-16">
-          <p className="text-[12px] font-bold uppercase tracking-[0.24em] text-gold-soft">Be more than a fan</p>
-          <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-extrabold uppercase leading-tight tracking-tight text-[#f3ecdd] md:text-5xl">
-            Be part of the story.
-          </h2>
-          <a
-            href="#fan-wall"
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-gold-soft"
-          >
-            Join the conversation <ArrowRight className="h-4 w-4" strokeWidth={2} />
-          </a>
-        </section>
-
-        {rewards.length > 0 && (
-          <section className="mt-14 rounded-3xl border border-gold/30 bg-gradient-to-br from-gold/10 to-transparent p-6 sm:p-8">
-            <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-deep">
-              <Gift className="h-3.5 w-3.5" strokeWidth={1.5} /> What top fans win
-            </p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {rewards.map((r, i) => (
-                <div key={i} className="rounded-2xl border border-border bg-surface p-4">
-                  <p className="font-semibold">{r.title}</p>
-                  {r.detail && <p className="mt-1 text-sm text-muted">{r.detail}</p>}
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 text-xs text-faint">
-              Climb the leaderboard and verify your email to be eligible.
-            </p>
-          </section>
-        )}
-
-        <FanLeaderboard slug={slug} />
-
-        <FanBoard slug={slug} whatsapp={whatsappUrl} telegram={telegramUrl} />
-
-        {/* Quote band */}
-        <section className="mt-16 flex items-center justify-center gap-4 border-y border-border py-10 text-center">
-          <Quote className="hidden h-6 w-6 shrink-0 rotate-180 text-gold sm:block" fill="currentColor" strokeWidth={0} />
-          <p className="text-lg font-semibold uppercase tracking-wide text-muted md:text-xl">
-            A crazy world. A fearless heart. A story like no other.
-          </p>
-          <Quote className="hidden h-6 w-6 shrink-0 text-gold sm:block" fill="currentColor" strokeWidth={0} />
-        </section>
+        {/* The Fan Club — the core: join, prizes, leaderboard and wall as one block */}
+        <FanClub
+          slug={slug}
+          film={film.title}
+          rewards={rewards}
+          whatsapp={whatsappUrl}
+          telegram={telegramUrl}
+        />
 
         {/* Footer */}
         <footer className="mt-12 flex flex-col gap-6 border-t border-border py-10 md:flex-row md:items-center md:justify-between">

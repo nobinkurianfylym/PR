@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { db, bucket } from "@/server/db";
+import { db } from "@/server/db";
+import { deleteFilmCascade } from "@/server/film";
 import { isMasterAdminEmail, requireMasterAdmin } from "@/server/master-admin";
 
 /**
@@ -8,12 +9,6 @@ import { isMasterAdminEmail, requireMasterAdmin } from "@/server/master-admin";
  * D1 rows and the R2 files behind its assets — so no orphans are left. Their
  * membership of other people's campaigns is simply removed.
  */
-const FILM_TABLES = [
-  "phases", "missions", "team_members", "reviews", "assets", "film_links",
-  "shared_links", "competitors", "opportunities", "film_members", "fans",
-  "fan_actions", "fan_posts", "checklist_state",
-];
-
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const admin = await requireMasterAdmin();
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -38,25 +33,7 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
     .all<{ id: string }>();
 
   for (const { id: filmId } of films) {
-    // R2 first — assets and any checklist attachments.
-    for (const table of ["assets", "checklist_state"]) {
-      const { results: keys } = await d
-        .prepare(`SELECT r2_key FROM ${table} WHERE film_id = ? AND r2_key != ''`)
-        .bind(filmId)
-        .all<{ r2_key: string }>();
-      for (const { r2_key } of keys) {
-        try {
-          await bucket().delete(r2_key);
-        } catch {
-          /* keep going — a missing object shouldn't block the delete */
-        }
-      }
-    }
-    for (const table of FILM_TABLES) {
-      await d.prepare(`DELETE FROM ${table} WHERE film_id = ?`).bind(filmId).run();
-    }
-    await d.prepare("DELETE FROM broadcasts WHERE scope = ?").bind(filmId).run();
-    await d.prepare("DELETE FROM films WHERE id = ?").bind(filmId).run();
+    await deleteFilmCascade(filmId);
   }
 
   await d.prepare("DELETE FROM film_members WHERE user_id = ?").bind(id).run();

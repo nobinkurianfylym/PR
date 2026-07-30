@@ -17,18 +17,27 @@ const SUFFIX = `.${ROOT_DOMAIN}`;
 
 /**
  * Sibling FYLYM products whose subdomains currently resolve to this worker.
- * Send them to their real apps so they never show the PR page. (The clean
- * long-term fix is pointing each subdomain at its own app in Cloudflare; this
- * guarantees correct routing regardless.)
+ *
+ * Proxied products keep their pretty URL: every path on the host is served
+ * from the real app (reverse proxy), so pitch.fylym.com *stays* in the address
+ * bar. Redirected products (a full app with its own login/cookies) are bounced
+ * instead, since proxying auth cookies across hosts breaks sign-in.
  */
-const PRODUCT_REDIRECTS: Record<string, string> = {
+const PRODUCT_PROXY: Record<string, string> = {
   "pitch.fylym.com": "https://fylympitch.nobinkurian.workers.dev",
   "scheduler.fylym.com": "https://scheduler-bep.pages.dev",
+};
+const PRODUCT_REDIRECTS: Record<string, string> = {
   "writer.fylym.com": "https://web.nobinkurian.workers.dev",
 };
 
 export function middleware(req: NextRequest) {
   const host = ((req.headers.get("host") ?? "").split(":")[0] ?? "").toLowerCase();
+
+  const proxyBase = PRODUCT_PROXY[host];
+  if (proxyBase) {
+    return NextResponse.rewrite(new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, proxyBase));
+  }
 
   const redirectTo = PRODUCT_REDIRECTS[host];
   if (redirectTo) {
@@ -61,6 +70,9 @@ export function middleware(req: NextRequest) {
   return NextResponse.rewrite(url);
 }
 
+// Runs on every path (only favicon skipped) so a proxied product's own assets
+// — /_next/static, /assets, etc. — are forwarded too. For this worker's own
+// hosts the middleware just host-checks and passes through, which is cheap.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!favicon.ico).*)"],
 };

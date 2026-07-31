@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Clapperboard, Download, ExternalLink, Mail, Send, ShieldCheck, Trash2, Users } from "lucide-react";
+import { AlertTriangle, Clapperboard, Download, ExternalLink, Globe, Lock, Mail, Plus, Send, ShieldCheck, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
@@ -27,6 +27,10 @@ interface Broadcast {
   id: string; scope: string; subject: string;
   recipient_count: number; sent_count: number; status: string; created_at: string;
 }
+interface ReservedRow {
+  slug: string; note: string; created_at: string;
+  film_id: string | null; film_title: string | null; published: number | null; owner_email: string | null;
+}
 export default function AdminPage() {
   const { data } = useOverview();
   const [stats, setStats] = useState<FanStats | null>(null);
@@ -36,6 +40,11 @@ export default function AdminPage() {
   const [selfId, setSelfId] = useState("");
   const [emailReady, setEmailReady] = useState(false);
   const [forbidden, setForbidden] = useState(false);
+  const [reserved, setReserved] = useState<ReservedRow[]>([]);
+  const [systemReserved, setSystemReserved] = useState<string[]>([]);
+  const [rsvpName, setRsvpName] = useState("");
+  const [rsvpNote, setRsvpNote] = useState("");
+  const [rsvpMsg, setRsvpMsg] = useState<string | null>(null);
 
   const [scope, setScope] = useState("all");
   const [subject, setSubject] = useState("");
@@ -61,8 +70,39 @@ export default function AdminPage() {
     }
     const pRes = await fetch("/api/admin/projects", { cache: "no-store" });
     if (pRes.ok) setProjects(((await pRes.json()) as { projects: AdminProject[] }).projects);
+    const rRes = await fetch("/api/admin/reserved", { cache: "no-store" });
+    if (rRes.ok) {
+      const d = (await rRes.json()) as { reserved: ReservedRow[]; system: string[] };
+      setReserved(d.reserved);
+      setSystemReserved(d.system);
+    }
   }, []);
   useEffect(() => { void load(); }, [load]);
+
+  async function reserveName(e: React.FormEvent) {
+    e.preventDefault();
+    setRsvpMsg(null);
+    const res = await fetch("/api/admin/reserved", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: rsvpName, note: rsvpNote }),
+    });
+    const d = (await res.json().catch(() => ({}))) as { slug?: string; holder?: { title: string } | null; error?: string };
+    if (res.ok) {
+      setRsvpName(""); setRsvpNote("");
+      setRsvpMsg(d.holder ? `Reserved “${d.slug}”. It's currently held by “${d.holder.title}” — free it below to fully release it.` : `“${d.slug}” is now reserved.`);
+      await load();
+    } else setRsvpMsg(d.error ?? "Couldn't reserve that name.");
+  }
+  async function unreserve(slug: string) {
+    await fetch(`/api/admin/reserved?slug=${encodeURIComponent(slug)}`, { method: "DELETE" });
+    await load();
+  }
+  async function freeName(slug: string, filmTitle: string) {
+    if (!confirm(`Free “${slug}”?\n\nThis clears the address from “${filmTitle}” and takes its fan page offline. The campaign's data is kept — the owner just has to choose a new address to relaunch.`)) return;
+    const res = await fetch("/api/admin/free-slug", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug }) });
+    if (res.ok) await load();
+    else alert(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Couldn't free that name.");
+  }
 
   async function deleteUser(u: AdminUser) {
     const warn =
@@ -141,6 +181,77 @@ export default function AdminPage() {
           Every login, every fan, and messaging — across all campaigns on the platform.
         </p>
       </header>
+
+      {/* Control Centre — reserve or free any fan-page address (subdomain). */}
+      <Card className="border-blue-500/25">
+        <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-blue-400">
+          <Lock className="h-3.5 w-3.5" strokeWidth={1.5} /> Control Centre · Names &amp; subdomains
+        </p>
+        <p className="mt-1 text-[13px] text-faint">
+          Reserve any <span className="font-medium text-muted">name.fylym.com</span> the company needs, or free one a film is holding — like a product handle you want kept for FYLYM.
+        </p>
+
+        <form onSubmit={reserveName} className="mt-4 flex flex-wrap items-end gap-2">
+          <div className="min-w-[11rem] flex-1">
+            <Field label="Reserve a name" htmlFor="rsvp-name">
+              <div className="flex items-center gap-1 rounded-lg border border-border bg-background px-2.5">
+                <Input id="rsvp-name" value={rsvpName} onChange={(e) => setRsvpName(e.target.value)} placeholder="e.g. academy" autoCapitalize="none" spellCheck={false} className="border-0 bg-transparent px-0" />
+                <span className="shrink-0 text-sm text-faint">.fylym.com</span>
+              </div>
+            </Field>
+          </div>
+          <div className="min-w-[10rem] flex-[1.4]">
+            <Field label="Note (optional)" htmlFor="rsvp-note">
+              <Input id="rsvp-note" value={rsvpNote} onChange={(e) => setRsvpNote(e.target.value)} placeholder="Why it's held" />
+            </Field>
+          </div>
+          <Button type="submit" disabled={!rsvpName.trim()}>
+            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} /> Reserve
+          </Button>
+        </form>
+        {rsvpMsg && <p className="mt-2 text-[13px] text-muted">{rsvpMsg}</p>}
+
+        {reserved.length > 0 && (
+          <div className="mt-4 divide-y divide-border rounded-xl border border-border">
+            {reserved.map((r) => (
+              <div key={r.slug} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[13px]">
+                <span className="flex min-w-0 flex-1 items-center gap-2 font-medium">
+                  <span className="truncate">{r.slug}<span className="text-faint">.fylym.com</span></span>
+                  {r.film_id && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-500/40 px-1.5 py-0.5 text-[10px] text-amber-400">
+                      <AlertTriangle className="h-3 w-3" strokeWidth={1.5} /> held by {r.film_title}
+                    </span>
+                  )}
+                </span>
+                {r.note && <span className="hidden truncate text-faint sm:block">{r.note}</span>}
+                {r.film_id ? (
+                  <button onClick={() => void freeName(r.slug, r.film_title ?? r.slug)} className="shrink-0 rounded-md border border-amber-500/40 px-2 py-0.5 text-[11px] text-amber-400 transition-colors hover:bg-amber-500/10">
+                    Free name
+                  </button>
+                ) : (
+                  <span className="shrink-0 text-[11px] text-emerald-400">Free</span>
+                )}
+                <button onClick={() => void unreserve(r.slug)} aria-label={`Unreserve ${r.slug}`} className="shrink-0 rounded-md p-1 text-faint transition-colors hover:bg-raised hover:text-red-500">
+                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {systemReserved.length > 0 && (
+          <details className="mt-4 [&_summary]:list-none">
+            <summary className="flex cursor-pointer items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-faint">
+              <Globe className="h-3 w-3" strokeWidth={1.5} /> System-reserved ({systemReserved.length}) — always protected
+            </summary>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {systemReserved.map((s) => (
+                <span key={s} className="rounded-full border border-border px-2 py-0.5 text-[11px] text-faint">{s}</span>
+              ))}
+            </div>
+          </details>
+        )}
+      </Card>
 
       <Card>
         <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-faint">

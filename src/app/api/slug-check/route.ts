@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { currentUser } from "@/server/auth";
-import { isReserved, isValidSlug, slugify, subdomainFor } from "@/lib/slug";
+import { isValidSlug, slugify, subdomainFor } from "@/lib/slug";
+import { isNameReserved } from "@/server/reserved";
 
 /**
  * Live availability check for the create-film form. Normalises the input to a
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
   const base = { slug, subdomain: slug ? subdomainFor(slug) : "" };
 
   if (!slug || !isValidSlug(slug)) return NextResponse.json({ ...base, available: false, reason: "invalid" });
-  if (isReserved(slug)) return NextResponse.json({ ...base, available: false, reason: "reserved" });
+  if (await isNameReserved(slug)) return NextResponse.json({ ...base, available: false, reason: "reserved" });
 
   const taken = await db().prepare("SELECT id FROM films WHERE slug = ?").bind(slug).first();
   return NextResponse.json({ ...base, available: !taken, reason: taken ? "taken" : null });

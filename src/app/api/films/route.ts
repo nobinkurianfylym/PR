@@ -4,6 +4,7 @@ import { currentUser } from "@/server/auth";
 import { setActiveFilm } from "@/server/film";
 import { slugify, uniqueSlug } from "@/server/slug";
 import { slugStatus } from "@/lib/slug";
+import { isNameReserved } from "@/server/reserved";
 import { addMember } from "@/server/membership";
 import { planCampaign, seedMissions } from "@/server/brain";
 
@@ -33,11 +34,10 @@ export async function POST(req: Request) {
   // The UNIQUE index on films.slug is the final guard against a concurrent
   // duplicate — we retry once if it loses that race.
   const wanted = slugify(String(b.slug ?? ""));
-  let slug =
-    wanted && slugStatus(wanted) === "ok" &&
-    !(await db().prepare("SELECT id FROM films WHERE slug = ?").bind(wanted).first())
-      ? wanted
-      : await uniqueSlug(title);
+  const wantedOk =
+    wanted && slugStatus(wanted) === "ok" && !(await isNameReserved(wanted)) &&
+    !(await db().prepare("SELECT id FROM films WHERE slug = ?").bind(wanted).first());
+  let slug = wantedOk ? wanted : await uniqueSlug(title);
 
   const filmId = crypto.randomUUID();
   const database = db();

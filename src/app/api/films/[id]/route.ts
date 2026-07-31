@@ -4,6 +4,7 @@ import { currentUser } from "@/server/auth";
 import { planCampaign } from "@/server/brain";
 import { slugify } from "@/server/slug";
 import { slugStatus } from "@/lib/slug";
+import { isNameReserved } from "@/server/reserved";
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
@@ -30,8 +31,10 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const wanted = slugify(String(b.slug));
     if (wanted && wanted !== (film.slug ?? "")) {
       const st = slugStatus(wanted);
-      if (st === "reserved") return NextResponse.json({ error: "That address is reserved." }, { status: 400 });
       if (st === "invalid") return NextResponse.json({ error: "Use a–z, 0–9 and hyphens (max 60)." }, { status: 400 });
+      if (st === "reserved" || (await isNameReserved(wanted))) {
+        return NextResponse.json({ error: "That address is reserved." }, { status: 400 });
+      }
       const clash = await db()
         .prepare("SELECT id FROM films WHERE slug = ? AND id != ?")
         .bind(wanted, id)

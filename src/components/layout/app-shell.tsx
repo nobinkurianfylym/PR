@@ -10,6 +10,7 @@ import {
   Users,
   FolderLock,
   MessageSquareQuote,
+  Gift,
   ShieldCheck,
   Heart,
   ExternalLink,
@@ -28,6 +29,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/team", label: "Street Team", icon: Users },
   { href: "/assets", label: "Assets", icon: FolderLock },
   { href: "/reviews", label: "Review Wall", icon: MessageSquareQuote },
+  { href: "/rewards", label: "Fan Rewards", icon: Gift },
 ];
 
 function Frame({ children }: { children: ReactNode }) {

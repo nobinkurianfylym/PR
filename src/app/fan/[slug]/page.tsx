@@ -216,6 +216,12 @@ export default async function FanPage(
 
   const meta = [film.genre, film.language].filter(Boolean).join(" · ");
 
+  // If the film has announced a prize, the header leads with it instead of the
+  // generic "Fan Club" — the real reward is the stronger hook. Falls back to
+  // "Fan Club" when nothing is announced.
+  const topPrize = rewards[0]?.title?.trim() ?? "";
+  const prizeCta = topPrize ? (/^win\b/i.test(topPrize) ? topPrize : `Win ${topPrize}`) : "";
+
   // ---- Movie SEO / GEO — assembled strictly from real data ----
   const canonical = `https://${subdomainFor(slug)}`;
   const cast = parseCast(film.cast);
@@ -262,7 +268,7 @@ export default async function FanPage(
       label: "Reviews",
     },
     ...(musicLinks.length > 0 ? [{ id: "music-links", label: "Music" }] : []),
-    { id: "fan-club", label: "Fan Club" },
+    { id: "fan-club", label: prizeCta || "Fan Club" },
   ];
   // These live in the footer rather than the primary header nav.
   const footerNav = [
@@ -303,15 +309,27 @@ export default async function FanPage(
           </a>
 
           <nav className="hidden items-center gap-0.5 lg:flex">
-            {nav.map((n) => (
-              <a
-                key={n.id}
-                href={`#${n.id}`}
-                className="rounded-full px-3.5 py-2 text-[13px] font-medium text-muted transition-colors duration-200 hover:bg-raised/70 hover:text-foreground"
-              >
-                {n.label}
-              </a>
-            ))}
+            {nav.map((n) => {
+              // The announced prize gets a glowing gold, outlined pill.
+              const isPrize = n.id === "fan-club" && !!prizeCta;
+              return isPrize ? (
+                <a
+                  key={n.id}
+                  href={`#${n.id}`}
+                  className="prize-glow ml-1 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-gold-soft to-gold px-3.5 py-2 text-[13px] font-bold uppercase tracking-wide text-white ring-1 ring-gold-soft/70 transition-transform duration-300 ease-out-expo hover:-translate-y-0.5"
+                >
+                  <Ticket className="h-3.5 w-3.5" strokeWidth={2} /> {n.label}
+                </a>
+              ) : (
+                <a
+                  key={n.id}
+                  href={`#${n.id}`}
+                  className="rounded-full px-3.5 py-2 text-[13px] font-medium text-muted transition-colors duration-200 hover:bg-raised/70 hover:text-foreground"
+                >
+                  {n.label}
+                </a>
+              );
+            })}
           </nav>
 
           {film.submissions_open === 1 ? (
@@ -322,9 +340,13 @@ export default async function FanPage(
           ) : (
             <a
               href="#join"
-              className="shrink-0 rounded-full bg-gold px-5 py-2.5 text-[13px] font-semibold text-white shadow-soft transition-all duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-gold-soft hover:shadow-card"
+              className={
+                prizeCta
+                  ? "prize-glow inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-b from-gold-soft to-gold px-5 py-2.5 text-[13px] font-bold uppercase tracking-wide text-white ring-1 ring-gold-soft/70 transition-transform duration-300 ease-out-expo hover:-translate-y-0.5"
+                  : "shrink-0 rounded-full bg-gold px-5 py-2.5 text-[13px] font-semibold text-white shadow-soft transition-all duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-gold-soft hover:shadow-card"
+              }
             >
-              Join Fan Club
+              {prizeCta ? <><Ticket className="h-3.5 w-3.5" strokeWidth={2} /> {prizeCta}</> : "Join Fan Club"}
             </a>
           )}
         </div>

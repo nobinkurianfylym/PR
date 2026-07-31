@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, Upload, X as Close } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
@@ -43,6 +44,9 @@ export function SubmitForm({
   const [url, setUrl] = useState("");
   const [kind, setKind] = useState(SHARED_LINK_KINDS[0]!);
   const [note, setNote] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -118,17 +122,18 @@ export function SubmitForm({
         </Button>
       )}
 
-      {open && (
+      {mounted && open && createPortal(
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Submit material"
           onClick={close}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] overflow-y-auto bg-black/80 backdrop-blur-sm"
         >
+          <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface shadow-cinematic"
+            className="relative my-auto w-full max-w-lg rounded-2xl border border-border bg-surface shadow-cinematic"
           >
             <button
               onClick={close}
@@ -254,7 +259,9 @@ export function SubmitForm({
               </form>
             )}
           </div>
-        </div>
+          </div>
+        </div>,
+        document.body,
       )}
     </>
   );

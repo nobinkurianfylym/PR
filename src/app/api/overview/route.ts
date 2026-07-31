@@ -29,11 +29,28 @@ export async function GET() {
     .bind(filmId)
     .first<Record<string, unknown>>();
   if (!film) return NextResponse.json({ user, film: null, films, isMasterAdmin: isMasterAdminEmail(user.email) });
-  const [phases, missions, team, reviews] = await Promise.all([
+  const [phases, missions, team, reviews, fansAgg, coverageAgg, pendingCov, yt] = await Promise.all([
     database.prepare("SELECT * FROM phases WHERE film_id = ? ORDER BY sort").bind(filmId).all(),
     database.prepare("SELECT * FROM missions WHERE film_id = ? ORDER BY done, rowid").bind(filmId).all(),
     database.prepare("SELECT * FROM team_members WHERE film_id = ? ORDER BY contribution DESC").bind(filmId).all(),
     database.prepare("SELECT * FROM reviews WHERE film_id = ? ORDER BY date DESC").bind(filmId).all(),
+    database.prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN created_at >= datetime('now','-7 days') THEN 1 ELSE 0 END) AS this_week,
+              SUM(CASE WHEN created_at >= datetime('now','-14 days') AND created_at < datetime('now','-7 days') THEN 1 ELSE 0 END) AS prev_week
+         FROM fans WHERE film_id = ?`,
+    ).bind(filmId).first<{ total: number; this_week: number; prev_week: number }>(),
+    database.prepare(
+      `SELECT SUM(CASE WHEN status='approved' THEN 1 ELSE 0 END) AS live,
+              SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) AS pending
+         FROM shared_links WHERE film_id = ?`,
+    ).bind(filmId).first<{ live: number; pending: number }>(),
+    database.prepare(
+      "SELECT id, url, label, kind, note FROM shared_links WHERE film_id = ? AND status='pending' ORDER BY created_at DESC LIMIT 12",
+    ).bind(filmId).all<{ id: string; url: string; label: string; kind: string; note: string }>(),
+    database.prepare(
+      "SELECT video_id, views, likes, comments, fetched_at, prev_views, prev_fetched_at FROM youtube_stats WHERE film_id = ?",
+    ).bind(filmId).first<{ video_id: string; views: number; likes: number; comments: number; fetched_at: string; prev_views: number; prev_fetched_at: string }>(),
   ]);
 
   const today = new Date().toISOString().slice(0, 10);
@@ -57,10 +74,38 @@ export async function GET() {
       : null,
   });
 
+  // ---- War-room metrics (all real DB data) ----
+  const trailerHasYT = /youtu\.?be/i.test(String(film.trailer_url ?? ""));
+  let ytVelocity: number | null = null;
+  if (yt && yt.prev_fetched_at && yt.fetched_at) {
+    const days = (new Date(yt.fetched_at.replace(" ", "T") + "Z").getTime() -
+      new Date(yt.prev_fetched_at.replace(" ", "T") + "Z").getTime()) / 864e5;
+    if (days > 0.02) ytVelocity = Math.round((yt.views - yt.prev_views) / days);
+  }
+  const metrics = {
+    daysToRelease,
+    releaseDate: film.release_date as string,
+    market: String(film.market ?? ""),
+    bookingStatus: String(film.booking_status ?? ""),
+    fans: {
+      total: fansAgg?.total ?? 0,
+      thisWeek: fansAgg?.this_week ?? 0,
+      prevWeek: fansAgg?.prev_week ?? 0,
+    },
+    coverage: { live: coverageAgg?.live ?? 0, pending: coverageAgg?.pending ?? 0 },
+    reviews: reviewRows.length,
+    trailer: yt
+      ? { videoId: yt.video_id, views: yt.views, likes: yt.likes, comments: yt.comments, velocityPerDay: ytVelocity, fetchedAt: yt.fetched_at }
+      : null,
+    hasTrailerLink: trailerHasYT,
+    pendingCoverage: pendingCov.results,
+  };
+
   return NextResponse.json({
     user,
     isMasterAdmin: isMasterAdminEmail(user.email),
     films,
+    metrics,
     film: { ...film, healthScore: health, phase, daysToRelease },
     phases: phaseRows.map((p) => ({
       ...p,

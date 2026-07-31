@@ -19,17 +19,17 @@ const SUFFIX = `.${ROOT_DOMAIN}`;
  * Sibling FYLYM products whose subdomains currently resolve to this worker.
  *
  * Proxied products keep their pretty URL: every path on the host is served
- * from the real app (reverse proxy), so pitch.fylym.com *stays* in the address
- * bar. Redirected products (a full app with its own login/cookies) are bounced
- * instead, since proxying auth cookies across hosts breaks sign-in.
+ * from the real app (reverse proxy), so pitch.fylym.com, scheduler.fylym.com
+ * and writer.fylym.com all *stay* in the address bar. The reverse proxy keeps
+ * the same host toward the browser, so each app's cookies stay scoped to its
+ * own fylym.com subdomain. Redirected products (if any) are bounced instead.
  */
 const PRODUCT_PROXY: Record<string, string> = {
   "pitch.fylym.com": "https://fylympitch.nobinkurian.workers.dev",
   "scheduler.fylym.com": "https://scheduler-bep.pages.dev",
-};
-const PRODUCT_REDIRECTS: Record<string, string> = {
   "writer.fylym.com": "https://web.nobinkurian.workers.dev",
 };
+const PRODUCT_REDIRECTS: Record<string, string> = {};
 
 export function middleware(req: NextRequest) {
   const host = ((req.headers.get("host") ?? "").split(":")[0] ?? "").toLowerCase();

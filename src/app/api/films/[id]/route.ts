@@ -44,13 +44,15 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   await db()
     .prepare(
       `UPDATE films SET title=?, genre=?, language=?, budget=?, marketing_budget=?,
-       release_date=?, poster_url=?, trailer_url=?, cast=?, crew=? WHERE id=?`,
+       release_date=?, poster_url=?, trailer_url=?, cast=?, crew=?,
+       tagline=?, synopsis=? WHERE id=?`,
     )
     .bind(
       title, String(b.genre ?? ""), String(b.language ?? ""),
       Number(b.budget ?? 0), Number(b.marketingBudget ?? 0),
       releaseDate, String(b.posterUrl ?? ""), String(b.trailerUrl ?? ""),
-      String(b.cast ?? ""), String(b.crew ?? ""), id,
+      String(b.cast ?? ""), String(b.crew ?? ""),
+      String(b.tagline ?? "").slice(0, 200), String(b.synopsis ?? "").slice(0, 4000), id,
     )
     .run();
 

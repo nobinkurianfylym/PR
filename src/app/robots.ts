@@ -8,7 +8,8 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: [
         "/api/", "/dashboard", "/admin", "/brain", "/assets",
-        "/team", "/campaign", "/reviews", "/films", "/signin", "/signup",
+        "/team", "/campaign", "/reviews", "/rewards", "/films",
+        "/join", "/signin", "/signup",
       ],
     },
     sitemap: "https://pr.fylym.com/sitemap.xml",

@@ -18,6 +18,15 @@ import { subdomainFor } from "@/lib/slug";
 import { linksIn, SHARED_LINK_KINDS, type FilmLink } from "@/lib/platforms";
 import { PlatformLogo } from "@/components/ui/platform-logo";
 import type { Review } from "@/types";
+import { parseCast, parseCrew } from "@/lib/movie-people";
+import {
+  movieJsonLd,
+  movieQuickFacts,
+  movieFaqs,
+  factualLine,
+  type MovieSeoInput,
+} from "@/lib/movie-seo";
+import { QuickFacts, MovieAbout, CastCrew, MovieFaq } from "@/features/press/movie-sections";
 
 /** Reads D1 per request — press kits must reflect the vault immediately. */
 export const dynamic = "force-dynamic";
@@ -29,12 +38,20 @@ interface FilmRow {
   language: string;
   release_date: string;
   submissions_open: number;
+  tagline: string;
+  synopsis: string;
+  cast: string;
+  crew: string;
+  trailer_url: string;
+  poster_url: string;
 }
 
 async function getFilm(slug: string): Promise<FilmRow | null> {
   return db()
     .prepare(
-      "SELECT id, title, genre, language, release_date, submissions_open FROM films WHERE slug = ? AND published = 1",
+      `SELECT id, title, genre, language, release_date, submissions_open,
+              tagline, synopsis, "cast" AS cast, crew, trailer_url, poster_url
+         FROM films WHERE slug = ? AND published = 1`,
     )
     .bind(slug)
     .first<FilmRow>();
@@ -81,19 +98,46 @@ export async function generateMetadata(
   if (!film) return { title: "Fan club — PR.FYLYM" };
 
   const [imageId, base] = await Promise.all([getHeroImage(film.id), origin()]);
-  const title = `${film.title} — Official Fan Club`;
-  const description = `Join the ${film.title} fan club: first-look updates, contests, premiere-ticket draws, posters, trailer and reviews — all in one place.`;
+  const yr = /^\d{4}/.test(film.release_date) ? film.release_date.slice(0, 4) : "";
+  const title = `${film.title}${yr ? ` (${yr})` : ""} — Cast, Trailer, Reviews & Release Date`;
+  // Prefer the real synopsis; otherwise a factual, non-fabricated summary.
+  const factual = [
+    film.title, "is a", yr, film.language && `${film.language}-language`,
+    film.genre && film.genre.split(/[,/]+/)[0]?.trim().toLowerCase(), "film.",
+  ].filter(Boolean).join(" ").replace(/\s+/g, " ");
+  const description = (
+    film.synopsis.trim() ||
+    `${factual} Official fan club for ${film.title}: cast, trailer, reviews, release date, posters, songs and updates.`
+  ).slice(0, 300);
   const images = imageId ? [`${base}/api/assets/${imageId}`] : undefined;
+  const keywords = [
+    film.title, `${film.title} cast`, `${film.title} trailer`, `${film.title} review`,
+    `${film.title} release date`, `${film.title} songs`, `${film.title} fan club`,
+    film.genre, film.language, yr,
+  ].filter(Boolean);
   // The film's subdomain is the canonical home, whichever host served this.
   const canonical = `https://${subdomainFor(slug)}`;
 
   return {
     title,
     description,
+    keywords,
     metadataBase: new URL(canonical),
     alternates: { canonical },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       title, description, type: "website", url: canonical, siteName: "PR.FYLYM",
+      locale: film.language || undefined,
       ...(images && { images }),
     },
     twitter: {
@@ -172,16 +216,57 @@ export default async function FanPage(
 
   const meta = [film.genre, film.language].filter(Boolean).join(" · ");
 
+  // ---- Movie SEO / GEO — assembled strictly from real data ----
+  const canonical = `https://${subdomainFor(slug)}`;
+  const cast = parseCast(film.cast);
+  const crew = parseCrew(film.crew);
+  const posterUrl = heroSrc ? `${base}${heroSrc}` : film.poster_url || null;
+  const stillUrls = mediaAssets
+    .filter((a) => a.content_type.startsWith("image/"))
+    .slice(0, 8)
+    .map((a) => `${base}/api/assets/${a.id}`);
+  const seoInput: MovieSeoInput = {
+    film: {
+      title: film.title, slug, genre: film.genre, language: film.language,
+      release_date: film.release_date, tagline: film.tagline, synopsis: film.synopsis,
+      trailer_url: film.trailer_url,
+    },
+    canonical,
+    base,
+    posterUrl,
+    stillUrls,
+    cast,
+    crew,
+    reviews: reviews.map((r) => ({
+      quote: r.quote, publication: r.publication, critic: r.critic, rating: r.rating, date: r.date,
+    })),
+    sameAs: [...officialLinks, ...socialLinks].map((l) => l.url),
+    ticketUrls: ticketLinks.map((l) => l.url),
+    fanCount: 0,
+    today: new Date().toISOString().slice(0, 10),
+    updatedISO: new Date().toISOString(),
+  };
+  const quickFacts = movieQuickFacts(seoInput);
+  const faqs = movieFaqs(seoInput);
+  const aboutFactual = factualLine(seoInput.film);
+  const jsonLd = movieJsonLd(seoInput);
+
   // Top-nav anchors — only the sections that exist.
   const nav = [
     { id: "top", label: "Home" },
+    { id: "about", label: "About" },
     ...(mediaAssets.length > 0 ? [{ id: "gallery", label: "Gallery" }] : []),
+    ...(cast.length > 0 || crew.length > 0 ? [{ id: "cast", label: "Cast" }] : []),
     {
       id: coverageGroups.length > 0 ? "reviews" : reviews.length > 0 ? "review-wall" : "audience-reviews",
       label: "Reviews",
     },
     ...(musicLinks.length > 0 ? [{ id: "music-links", label: "Music" }] : []),
     { id: "fan-club", label: "Fan Club" },
+  ];
+  // These live in the footer rather than the primary header nav.
+  const footerNav = [
+    { id: "movie-faq", label: "FAQ" },
     { id: "fan-wall", label: "Updates" },
   ];
 
@@ -189,17 +274,6 @@ export default async function FanPage(
     "inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/70 px-4 py-2 text-[13px] font-medium text-muted shadow-soft transition-all duration-300 ease-out-expo hover:-translate-y-0.5 hover:border-gold/40 hover:text-gold-deep hover:shadow-card";
   const btnDark =
     "inline-flex items-center justify-center gap-2 rounded-full bg-espresso px-6 py-3 text-sm font-semibold text-[#efe7d6] shadow-card transition-all duration-300 ease-out-expo hover:-translate-y-0.5 hover:opacity-95 hover:shadow-elevated";
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Movie",
-    name: film.title,
-    url: `https://${subdomainFor(slug)}`,
-    ...(film.genre && { genre: film.genre }),
-    ...(film.language && { inLanguage: film.language }),
-    ...(film.release_date && { datePublished: film.release_date }),
-    ...(heroSrc && { image: `${base}${heroSrc}` }),
-  };
 
   return (
     <div className="theme-fan min-h-screen scroll-smooth bg-background text-foreground" id="top">
@@ -275,7 +349,7 @@ export default async function FanPage(
             </h1>
             <div className="mt-7 h-1 w-16 rounded-full bg-gold" />
             <p className="mt-7 max-w-md text-lg leading-relaxed text-muted md:text-xl">
-              Not just a movie — it&rsquo;s our world. Celebrate the madness, be part of the magic.
+              {film.tagline || "Not just a movie — it's our world. Celebrate the madness, be part of the magic."}
             </p>
             {meta && (
               <p className="mt-5 text-sm text-faint">
@@ -349,6 +423,16 @@ export default async function FanPage(
           </Reveal>
         )}
 
+        {/* Quick Facts — top-of-page, AI-citation block (real data only) */}
+        <Reveal className="mt-20 md:mt-28">
+          <QuickFacts title={film.title} facts={quickFacts} />
+        </Reveal>
+
+        {/* About / Synopsis */}
+        <Reveal className="mt-20 md:mt-28">
+          <MovieAbout title={film.title} tagline={film.tagline} synopsis={film.synopsis} factualLine={aboutFactual} />
+        </Reveal>
+
         {/* Gallery */}
         {mediaAssets.length > 0 ? (
           <Reveal className="mt-20 md:mt-28">
@@ -359,6 +443,13 @@ export default async function FanPage(
             <p className="text-sm text-faint">Materials are being prepared. Please check back shortly.</p>
           </div>
         ) : null}
+
+        {/* Cast & crew (real cast/crew fields) */}
+        {(cast.length > 0 || crew.length > 0) && (
+          <Reveal className="mt-20 md:mt-28">
+            <CastCrew cast={cast} crew={crew} />
+          </Reveal>
+        )}
 
         {fileAssets.length > 0 && (
           <Reveal className="mt-20 md:mt-28">
@@ -437,6 +528,11 @@ export default async function FanPage(
           </Reveal>
         )}
 
+        {/* FAQ — data-derived, no-JS, crawlable + FAQPage schema */}
+        <Reveal className="mt-20 md:mt-28">
+          <MovieFaq faqs={faqs} />
+        </Reveal>
+
         {/* The Fan Club — the core: join, prizes, leaderboard and wall as one block */}
         <Reveal>
           <FanClub
@@ -464,6 +560,17 @@ export default async function FanPage(
               </a>
             </p>
           </div>
+          <nav aria-label="More" className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {footerNav.map((n) => (
+              <a
+                key={n.id}
+                href={`#${n.id}`}
+                className="text-[13px] font-medium text-muted transition-colors hover:text-gold-deep"
+              >
+                {n.label}
+              </a>
+            ))}
+          </nav>
           {socialLinks.length > 0 && (
             <div className="flex items-center gap-3">
               <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-faint">Follow us</span>

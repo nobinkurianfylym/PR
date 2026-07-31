@@ -11,12 +11,13 @@ import { OfficialLinksEditor } from "@/features/films/official-links-editor";
 import { slugify, slugStatus } from "@/lib/slug";
 
 type FormState = Record<
-  "title" | "genre" | "language" | "budget" | "marketingBudget" | "releaseDate" | "posterUrl" | "trailerUrl" | "cast" | "crew" | "slug",
+  "title" | "tagline" | "genre" | "language" | "budget" | "marketingBudget" | "releaseDate" | "posterUrl" | "trailerUrl" | "cast" | "crew" | "synopsis" | "slug",
   string
 >;
 
-const FIELDS: { name: keyof FormState; label: string; type?: string }[] = [
+const FIELDS: { name: keyof FormState; label: string; type?: string; hint?: string }[] = [
   { name: "title", label: "Movie title" },
+  { name: "tagline", label: "Tagline", hint: "One line shown under the title on the fan page." },
   { name: "genre", label: "Genre" },
   { name: "language", label: "Language" },
   { name: "budget", label: "Production budget (₹)", type: "number" },
@@ -24,8 +25,8 @@ const FIELDS: { name: keyof FormState; label: string; type?: string }[] = [
   { name: "releaseDate", label: "Release date", type: "date" },
   { name: "posterUrl", label: "Poster link" },
   { name: "trailerUrl", label: "Trailer link" },
-  { name: "cast", label: "Cast" },
-  { name: "crew", label: "Crew" },
+  { name: "cast", label: "Cast", hint: "Comma-separated. Use “Actor as Character” for roles." },
+  { name: "crew", label: "Crew", hint: "Comma-separated. Use “Role: Name”, e.g. Director: H Vinoth." },
 ];
 
 export default function EditFilmPage() {
@@ -40,6 +41,7 @@ export default function EditFilmPage() {
       const f = data.film as unknown as Record<string, unknown>;
       setForm({
         title: String(f.title ?? ""),
+        tagline: String(f.tagline ?? ""),
         genre: String(f.genre ?? ""),
         language: String(f.language ?? ""),
         budget: String(f.budget ?? ""),
@@ -49,6 +51,7 @@ export default function EditFilmPage() {
         trailerUrl: String(f.trailer_url ?? ""),
         cast: String(f.cast ?? ""),
         crew: String(f.crew ?? ""),
+        synopsis: String(f.synopsis ?? ""),
         slug: String(f.slug ?? ""),
       });
     }
@@ -108,7 +111,7 @@ export default function EditFilmPage() {
 
       <Card className="mt-6">
         <form onSubmit={save} className="space-y-4">
-          {FIELDS.map(({ name, label, type }) => (
+          {FIELDS.map(({ name, label, type, hint }) => (
             <Field key={name} label={label} htmlFor={name}>
               <Input
                 id={name}
@@ -117,8 +120,24 @@ export default function EditFilmPage() {
                 required={name === "title" || name === "releaseDate"}
                 onChange={(e) => setForm({ ...form, [name]: e.target.value })}
               />
+              {hint && <p className="mt-1 text-[11px] text-faint">{hint}</p>}
             </Field>
           ))}
+
+          <div>
+            <label htmlFor="synopsis" className="mb-1.5 block text-[13px] font-medium text-muted">
+              Synopsis
+            </label>
+            <textarea
+              id="synopsis"
+              value={form.synopsis}
+              onChange={(e) => setForm({ ...form, synopsis: e.target.value })}
+              rows={6}
+              placeholder="A few true sentences about the film — story, themes, what makes it matter. Shown as the About section on the fan page and used by search engines."
+              className="w-full resize-y rounded-lg border border-border bg-raised px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-faint focus:border-foreground/30"
+            />
+            <p className="mt-1 text-[11px] text-faint">Written by your team — never auto-generated. Powers the About section and the page&rsquo;s search description.</p>
+          </div>
 
           <div className="rounded-lg border border-border bg-raised/40 p-3">
             <label htmlFor="film-slug" className="text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
